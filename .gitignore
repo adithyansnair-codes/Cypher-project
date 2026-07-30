@@ -1,0 +1,29 @@
+# Java
+target/
+*.class
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ
+.idea/
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# C#
+bin/
+obj/
+
+# Environment
+.env
+
+# OS
+.DS_Store
