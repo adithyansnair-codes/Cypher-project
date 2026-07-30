@@ -147,17 +147,30 @@ CYPHER/
 │
 └── README.md
 ```
+---## 🔀 Branching Strategy (GitHub Flow)
 
----
+CYPHER follows the **GitHub Flow** branching strategy.
 
-## 🔄 Branching Strategy
+### Workflow
 
-- main → Production-ready code
-- develop → Active development
-- feature/* → Individual features
-- bugfix/* → Bug fixes
+1. The `main` branch always contains stable and production-ready code.
+2. A new **feature branch** is created for every new feature or enhancement.
+3. Development is carried out on the feature branch.
+4. Changes are committed regularly with meaningful commit messages.
+5. The feature branch is pushed to GitHub.
+6. A Pull Request (PR) is created to review the changes.
+7. After review, the Pull Request is merged into the `main` branch.
 
----
+### Branch Structure
+
+- `main` → Stable production-ready branch
+- `feature/docker-support` → Docker integration
+- Future feature branches:
+  - `feature/frontend-ui`
+  - `feature/ai-module`
+  - `feature/user-management`
+
+This workflow helps maintain code quality, supports collaboration, and keeps the `main` branch stable.
 
 ## ⚙️ Getting Started
 
