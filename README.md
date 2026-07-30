@@ -308,6 +308,40 @@ CYPHER
 ```
 
 ---
+---
+
+# 🛠️ Local Development Tools
+
+The following tools were used during the development of CYPHER:
+
+| Tool | Purpose |
+|------|---------|
+| Java 21 | Backend development |
+| Spring Boot | REST API framework |
+| Maven | Dependency management and build tool |
+| PostgreSQL | Relational database |
+| Git | Version control |
+| GitHub | Source code hosting and collaboration |
+| VS Code / code-server | Source code editor |
+| Postman | API testing |
+| Docker | Containerization |
+| AWS EC2 (Ubuntu) | Cloud deployment |
+| Figma | UI/UX design |
+| Draw.io | System architecture diagrams |
+
+---
+
+## Development Environment
+
+- **Operating System:** Ubuntu 24.04 LTS (AWS EC2)
+- **Java Version:** Java 21
+- **Database:** PostgreSQL
+- **Build Tool:** Maven
+- **Version Control:** Git & GitHub
+- **IDE:** Visual Studio Code (code-server)
+- **API Testing:** Postman
+
+---
 
 ## 👨‍💻 Team Members
 
