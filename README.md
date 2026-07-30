@@ -105,6 +105,15 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - Draw.io
 
 ---
+---
+
+## 🏗️ System Architecture
+
+The CYPHER platform follows a three-tier architecture consisting of a React frontend, a Spring Boot backend, and a PostgreSQL database. Authentication is secured using JWT and Spring Security, while the backend is deployed on AWS EC2.
+
+![System Architecture](docs/architecture/architecture.png)
+
+---
 
 ## 📈 Success Metrics
 
