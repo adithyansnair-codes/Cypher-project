@@ -1,8 +1,5 @@
-# CYPHER
+# Cypher Project
 
-Cloud-hosted collaborative project.
+Cloud-native AI-powered visual intelligence platform for intelligent surveillance.
 
-Team:
-- Harsh
-- Sathya
-- Adi
+This README will be updated with the complete project documentation.
