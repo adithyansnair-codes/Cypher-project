@@ -147,7 +147,7 @@ CYPHER/
 │
 └── README.md
 ```
----## 🔀 Branching Strategy (GitHub Flow)
+## 🔀 Branching Strategy (GitHub Flow)
 
 CYPHER follows the **GitHub Flow** branching strategy.
 
