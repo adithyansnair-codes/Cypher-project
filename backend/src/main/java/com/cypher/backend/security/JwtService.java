@@ -46,6 +46,9 @@ public class JwtService {
                 .getPayload()
                 .getSubject();
     }
+public String extractUsername(String token) {
+    return extractEmail(token);
+}
 
     public boolean isTokenValid(String token, String email) {
         return extractEmail(token).equals(email);
