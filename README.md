@@ -181,6 +181,120 @@ http://localhost:8081
 ```
 
 ---
+---
+
+# 🚀 Quick Start – Local Development
+
+Follow these steps to run the CYPHER project locally.
+
+## Prerequisites
+
+Make sure the following software is installed:
+
+- Java 21
+- Maven
+- PostgreSQL
+- Git
+- Node.js (for the frontend)
+- Docker (optional)
+
+---
+
+## Clone the Repository
+
+```bash
+git clone git@github.com:adithyansnair-codes/Cypher-project.git
+cd Cypher-project
+```
+
+---
+
+## Backend Setup
+
+Navigate to the backend folder:
+
+```bash
+cd backend
+```
+
+Run the application:
+
+```bash
+./mvnw spring-boot:run
+```
+
+The backend will start on:
+
+```
+http://localhost:8081
+```
+
+---
+
+## Database Setup
+
+Create a PostgreSQL database named:
+
+```
+cypher
+```
+
+Update your `application.properties` if needed:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/cypher
+spring.datasource.username=postgres
+spring.datasource.password=your_password
+```
+
+---
+
+## Frontend Setup
+
+Navigate to the frontend folder:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The frontend will run on:
+
+```
+http://localhost:3000
+```
+
+---
+
+## API Testing
+
+Use Postman or cURL to test the APIs.
+
+Example:
+
+```bash
+curl -X POST http://localhost:8081/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email":"virat@example.com","password":"virat123"}'
+```
+
+---
+
+## Project Structure
+
+```
+CYPHER
+├── backend
+├── frontend
+├── docs
+├── database
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+```
+
+---
 
 ## 👨‍💻 Team Members
 
