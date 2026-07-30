@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: cypher-db
+    restart: always
+
+    environment:
+      POSTGRES_DB: cypher
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: cypher123
+
+    ports:
+      - "5432:5432"
+
+  backend:
+
+    build: .
+
+    container_name: cypher-backend
+
+    depends_on:
+      - postgres
+
+    ports:
+      - "8081:8081"
