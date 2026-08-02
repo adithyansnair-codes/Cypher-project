@@ -349,7 +349,7 @@ The following tools were used during the development of CYPHER:
 |------|----------------|
 | Harsh Singh | Backend Development & Authentication |
 | Satyanarayanan Sai | Frontend Development & Integration |
-| Adityan S. Nair | Database Design & Cloud Deployment |
+| Adithyan S. Nair | Database Design & Cloud Deployment |
 
 ---
 
