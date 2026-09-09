@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="24.7.17" type="device">
+  <diagram id="cypher-da2" name="CYPHER - DA2 Architecture">
+    <mxGraphModel dx="1500" dy="1130" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1130" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="CYPHER / System Architecture" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=30;fontColor=#24364B;fontStyle=1;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="28" width="1300" height="44" />
+        </mxCell>
+        <mxCell id="subtitle" value="DA2  |  Modular service-oriented architecture with layered Spring Boot components" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=17;fontColor=#24364B;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="76" width="1390" height="30" />
+        </mxCell>
+        <mxCell id="aws" value="" style="rounded=1;arcSize=3;fillColor=#F7F9FC;strokeColor=#A9BACB;dashed=1;container=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="355" y="135" width="1100" height="750" />
+        </mxCell>
+        <mxCell id="aws-title" value="AWS EC2 / Ubuntu - Dockerized deployment" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=20;fontColor=#24364B;fontStyle=1;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="380" y="151" width="1020" height="32" />
+        </mxCell>
+        <mxCell id="aws-caption" value="Compose: gateway, ai-engine, backend, mysql  |  Frontend: Nginx image defined by Dockerfile" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#24364B;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="380" y="186" width="1040" height="28" />
+        </mxCell>
+        <mxCell id="browser" value="Operator browser&#10;&#10;React + TypeScript&#10;Login / operations cockpit&#10;Incidents / cameras / stats&#10;REST client + WebSocket" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#EDF6FF;strokeColor=#7A9FBE;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="260" width="270" height="195" />
+        </mxCell>
+        <mxCell id="nginx" value="Nginx :80&#10;&#10;Static React build + proxy&#10;/       React SPA assets&#10;/api/   Gateway REST&#10;/ws     Gateway WebSocket&#10;/ai/    AI Engine" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#EDF6FF;strokeColor=#7A9FBE;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="250" width="300" height="215" />
+        </mxCell>
+        <mxCell id="gateway" value="CYPHER Gateway :8080&#10;&#10;Spring Boot&#10;Spring Security / JWT / BCrypt&#10;REST: auth, cameras, dashboard,&#10;incidents and ingestion&#10;WebSocket / STOMP events&#10;Entities + Spring Data JPA" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#EAF7F0;strokeColor=#77A68C;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="825" y="250" width="560" height="245" />
+        </mxCell>
+        <mxCell id="ai" value="AI Engine :5000&#10;&#10;Python / FastAPI&#10;Threat + health demo endpoints&#10;Scenario-generated incident payloads&#10;POST /demo/{scenario}" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#EAF7F0;strokeColor=#77A68C;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="575" width="370" height="165" />
+        </mxCell>
+        <mxCell id="db" value="MySQL 8.4 :3306&#10;&#10;cypher database&#10;Users / projects / cameras&#10;Incidents / detections&#10;mysql_data persistent volume" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#F0EDF9;strokeColor=#9C8ABD;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="825" y="575" width="290" height="185" />
+        </mxCell>
+        <mxCell id="backend" value="Supporting backend&#10;&#10;Spring Boot :8081&#10;Auth / user management&#10;UserService + repository&#10;Spring Security / JWT" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#F3F5F7;strokeColor=#A2ADB8;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1160" y="575" width="260" height="185" />
+        </mxCell>
+        <mxCell id="browser-request" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#426A91;strokeWidth=2;exitX=1.0;exitY=0.28205128205128205;exitPerimeter=0;entryX=0.0;entryY=0.3023255813953488;entryPerimeter=0;" edge="1" parent="1" source="browser" target="nginx">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="315" y="315" />
+            <mxPoint as="targetPoint" x="390" y="315" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="browser-request-label" value="HTTP" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#426A91;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="325" y="287" width="65" height="50" />
+        </mxCell>
+        <mxCell id="static-return" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#426A91;strokeWidth=2;exitX=0.0;exitY=0.7441860465116279;exitPerimeter=0;entryX=1.0;entryY=0.7692307692307693;entryPerimeter=0;" edge="1" parent="1" source="nginx" target="browser">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="390" y="410" />
+            <mxPoint as="targetPoint" x="315" y="410" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="static-return-label" value="SPA / events" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#426A91;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="318" y="427" width="95" height="50" />
+        </mxCell>
+        <mxCell id="proxy-api" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#426A91;strokeWidth=2;exitX=1.0;exitY=0.23255813953488372;exitPerimeter=0;entryX=0.0;entryY=0.20408163265306123;entryPerimeter=0;" edge="1" parent="1" source="nginx" target="gateway">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="690" y="300" />
+            <mxPoint as="targetPoint" x="825" y="300" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="proxy-api-label" value="/api/ REST" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#426A91;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="704" y="269" width="120" height="50" />
+        </mxCell>
+        <mxCell id="proxy-ws" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#198574;strokeWidth=2;dashed=1;exitX=0.0;exitY=0.6938775510204082;exitPerimeter=0;entryX=1.0;entryY=0.7906976744186046;entryPerimeter=0;" edge="1" parent="1" source="gateway" target="nginx">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="825" y="420" />
+            <mxPoint as="targetPoint" x="690" y="420" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="proxy-ws-label" value="/ws events" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#198574;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="704" y="435" width="120" height="50" />
+        </mxCell>
+        <mxCell id="proxy-ai" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#426A91;strokeWidth=2;exitX=0.3;exitY=1.0;exitPerimeter=0;entryX=0.24324324324324326;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="nginx" target="ai">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="480" y="465" />
+            <mxPoint as="targetPoint" x="480" y="575" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="proxy-ai-label" value="/ai/ -&gt; /" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#426A91;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="510" width="85" height="50" />
+        </mxCell>
+        <mxCell id="ingest" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#198574;strokeWidth=2;exitX=1.0;exitY=0.3212121212121212;exitPerimeter=0;entryX=0.0;entryY=0.9387755102040817;entryPerimeter=0;" edge="1" parent="1" source="ai" target="gateway">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="760" y="628" />
+            <mxPoint as="targetPoint" x="825" y="480" />
+            <Array as="points">
+              <mxPoint x="790" y="628" />
+              <mxPoint x="790" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ingest-label" value="POST /api/ingest/incident&#10;X-Service-Key" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#198574;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="555" y="515" width="230" height="50" />
+        </mxCell>
+        <mxCell id="gateway-db" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#426A91;strokeWidth=2;exitX=0.25892857142857145;exitY=1.0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="gateway" target="db">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="970" y="495" />
+            <mxPoint as="targetPoint" x="970" y="575" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gateway-db-label" value="JPA / JDBC" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#426A91;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="985" y="524" width="110" height="50" />
+        </mxCell>
+        <mxCell id="backend-db" style="edgeStyle=segmentEdgeStyle;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#426A91;strokeWidth=2;exitX=0.0;exitY=0.5405405405405406;exitPerimeter=0;entryX=1.0;entryY=0.5405405405405406;entryPerimeter=0;" edge="1" parent="1" source="backend" target="db">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1160" y="675" />
+            <mxPoint as="targetPoint" x="1115" y="675" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="backend-db-label" value="JPA" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#426A91;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1122" y="643" width="40" height="50" />
+        </mxCell>
+        <mxCell id="boundary-note" value="Arrows show primary request or event direction; REST responses return on the same connection." style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=15;fontColor=#24364B;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="800" width="1030" height="28" />
+        </mxCell>
+        <mxCell id="browser-note" value="React executes in the browser;&#10;Nginx serves the compiled assets." style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=15;fontColor=#24364B;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="485" width="285" height="65" />
+        </mxCell>
+        <mxCell id="backend-note" value="Supporting backend shares MySQL; no Gateway-to-backend call is established in the supplied configuration." style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=14;fontColor=#24364B;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="836" width="1040" height="30" />
+        </mxCell>
+        <mxCell id="scope" value="Scope and evolution from DA1&#10;&#10;Preserved: operator UI, Gateway, AI ingestion, relational persistence and the AWS EC2 / Docker boundary.&#10;Updated: PostgreSQL -&gt; MySQL 8.4; Nginx routing and the supporting Spring Boot backend are explicit.&#10;Deferred: reporting worker, S3, YOLO/PyTorch, Jenkins, GitHub Actions and Prometheus/Grafana integrations.&#10;AI is shown as the demo service evidenced by the supplied code; live camera inference is a future extension." style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;align=left;verticalAlign=top;spacing=18;fontFamily=Arial;fontSize=16;fontColor=#24364B;fillColor=#FAFBFC;strokeColor=#BDC8D2;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="925" width="1410" height="160" />
+        </mxCell>
+        <mxCell id="source" value="Source: DA1 Part 4, p.1; Parts 1-3 and 5; DA2 code/configuration in the referenced conversation.  |  Solid: requests/data; dashed: events." style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontFamily=Arial;fontSize=13;fontColor=#24364B;fontStyle=0;spacing=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="1097" width="1420" height="25" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

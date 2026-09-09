@@ -182,6 +182,30 @@ http://localhost:8081
 
 ---
 
+---
+
+## Software Design
+
+CYPHER follows a modular service-oriented architecture with layered components. The React frontend communicates with the Spring Boot Gateway through REST APIs and WebSocket connections, while the FastAPI AI Engine submits detected incidents through defined API interfaces. This separation, together with JWT-based authentication and repository-based persistence, promotes modularity, high cohesion, low coupling, and maintainability.
+
+### High-Level Architecture
+
+![CYPHER Architecture](docs/design/architecture/cypher-architecture.png)
+
+**Editable Draw.io Source:**  
+[Open Architecture Source](docs/design/architecture/cypher-architecture.drawio)
+
+### User Interface Design
+
+The CYPHER interface was designed as a clean security operations cockpit with consistent navigation, status indicators, incident prioritization, and monitoring controls.
+
+- [Login](docs/design/figma/01-login.png)
+- [Live Cockpit](docs/design/figma/02-live-cockpit.png)
+- [Incidents](docs/design/figma/03-incidents.png)
+- [Incident Details](docs/design/figma/04-incident-details.png)
+- [Camera Network](docs/design/figma/05-camera-network.png)
+- [Analytics & Reports](docs/design/figma/06-analytics-reports.png)
+
 ## 👨‍💻 Team Members
 
 | Name | Responsibility |
