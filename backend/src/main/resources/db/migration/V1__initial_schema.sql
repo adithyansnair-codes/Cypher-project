@@ -50,9 +50,9 @@ SET row_security = off;
 
 --
 -- Name: close_alerts_for_closed_incidents();
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.close_alerts_for_closed_incidents() RETURNS trigger
@@ -72,9 +72,9 @@ $$;
 
 --
 -- Name: create_incident_with_alert(bigint, bigint, character varying, text, character varying, bigint);
- Type: PROCEDURE;
- Schema: public;
- Owner: cypher_user
+-- Type: PROCEDURE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE PROCEDURE public.create_incident_with_alert(IN p_project_id bigint, IN p_camera_id bigint, IN p_title character varying, IN p_description text, IN p_severity character varying, IN p_assigned_to bigint)
@@ -128,9 +128,9 @@ $$;
 
 --
 -- Name: dashboard_summary();
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.dashboard_summary() RETURNS TABLE(total_projects integer, total_cameras integer, total_incidents integer, total_detections integer)
@@ -149,9 +149,9 @@ $$;
 
 --
 -- Name: get_camera_detection_count(bigint);
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.get_camera_detection_count(p_camera_id bigint) RETURNS integer
@@ -172,9 +172,9 @@ $$;
 
 --
 -- Name: get_open_incidents();
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.get_open_incidents() RETURNS integer
@@ -195,9 +195,9 @@ $$;
 
 --
 -- Name: get_project_camera_count(bigint);
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.get_project_camera_count(p_project_id bigint) RETURNS integer
@@ -218,9 +218,9 @@ $$;
 
 --
 -- Name: get_project_incident_count(bigint);
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.get_project_incident_count(p_project_id bigint) RETURNS integer
@@ -241,9 +241,9 @@ $$;
 
 --
 -- Name: log_incident_changes();
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.log_incident_changes() RETURNS trigger
@@ -276,9 +276,9 @@ $$;
 
 --
 -- Name: update_updated_at_column();
- Type: FUNCTION;
- Schema: public;
- Owner: cypher_user
+-- Type: FUNCTION;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE FUNCTION public.update_updated_at_column() RETURNS trigger
@@ -299,9 +299,9 @@ SET default_table_access_method = heap;
 
 --
 -- Name: alerts;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.alerts (
@@ -317,9 +317,9 @@ CREATE TABLE public.alerts (
 
 --
 -- Name: incidents;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.incidents (
@@ -340,9 +340,9 @@ CREATE TABLE public.incidents (
 
 --
 -- Name: active_alerts;
- Type: VIEW;
- Schema: public;
- Owner: cypher_user
+-- Type: VIEW;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE VIEW public.active_alerts AS
@@ -359,9 +359,9 @@ CREATE VIEW public.active_alerts AS
 
 --
 -- Name: ai_models;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.ai_models (
@@ -377,9 +377,9 @@ CREATE TABLE public.ai_models (
 
 --
 -- Name: ai_models_model_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.ai_models_model_id_seq
@@ -392,9 +392,9 @@ CREATE SEQUENCE public.ai_models_model_id_seq
 
 --
 -- Name: ai_models_model_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.ai_models_model_id_seq OWNED BY public.ai_models.model_id;
@@ -402,9 +402,9 @@ ALTER SEQUENCE public.ai_models_model_id_seq OWNED BY public.ai_models.model_id;
 
 --
 -- Name: alerts_alert_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.alerts_alert_id_seq
@@ -417,9 +417,9 @@ CREATE SEQUENCE public.alerts_alert_id_seq
 
 --
 -- Name: alerts_alert_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.alerts_alert_id_seq OWNED BY public.alerts.alert_id;
@@ -427,9 +427,9 @@ ALTER SEQUENCE public.alerts_alert_id_seq OWNED BY public.alerts.alert_id;
 
 --
 -- Name: audit_logs;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.audit_logs (
@@ -447,9 +447,9 @@ CREATE TABLE public.audit_logs (
 
 --
 -- Name: audit_logs_audit_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.audit_logs_audit_id_seq
@@ -462,9 +462,9 @@ CREATE SEQUENCE public.audit_logs_audit_id_seq
 
 --
 -- Name: audit_logs_audit_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.audit_logs_audit_id_seq OWNED BY public.audit_logs.audit_id;
@@ -472,16 +472,16 @@ ALTER SEQUENCE public.audit_logs_audit_id_seq OWNED BY public.audit_logs.audit_i
 
 --
 -- Name: camera_dashboard;
- Type: VIEW;
- Schema: public;
+-- Type: VIEW;
+-- Schema: public;
 -- (superseded duplicate definition of view camera_dashboard removed; a later CREATE OR REPLACE wins)
 
 
 --
 -- Name: cameras;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.cameras (
@@ -502,9 +502,9 @@ CREATE TABLE public.cameras (
 
 --
 -- Name: cameras_camera_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.cameras_camera_id_seq
@@ -517,9 +517,9 @@ CREATE SEQUENCE public.cameras_camera_id_seq
 
 --
 -- Name: cameras_camera_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.cameras_camera_id_seq OWNED BY public.cameras.camera_id;
@@ -527,9 +527,9 @@ ALTER SEQUENCE public.cameras_camera_id_seq OWNED BY public.cameras.camera_id;
 
 --
 -- Name: detections;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.detections (
@@ -546,9 +546,9 @@ CREATE TABLE public.detections (
 
 --
 -- Name: daily_detection_statistics;
- Type: VIEW;
- Schema: public;
- Owner: cypher_user
+-- Type: VIEW;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE VIEW public.daily_detection_statistics AS
@@ -561,9 +561,9 @@ CREATE VIEW public.daily_detection_statistics AS
 
 --
 -- Name: detections_detection_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.detections_detection_id_seq
@@ -576,9 +576,9 @@ CREATE SEQUENCE public.detections_detection_id_seq
 
 --
 -- Name: detections_detection_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.detections_detection_id_seq OWNED BY public.detections.detection_id;
@@ -586,9 +586,9 @@ ALTER SEQUENCE public.detections_detection_id_seq OWNED BY public.detections.det
 
 --
 -- Name: projects;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.projects (
@@ -605,9 +605,9 @@ CREATE TABLE public.projects (
 
 --
 -- Name: users;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.users (
@@ -626,9 +626,9 @@ CREATE TABLE public.users (
 
 --
 -- Name: incident_summary;
- Type: VIEW;
- Schema: public;
- Owner: cypher_user
+-- Type: VIEW;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE VIEW public.incident_summary AS
@@ -648,9 +648,9 @@ CREATE VIEW public.incident_summary AS
 
 --
 -- Name: incidents_incident_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.incidents_incident_id_seq
@@ -663,9 +663,9 @@ CREATE SEQUENCE public.incidents_incident_id_seq
 
 --
 -- Name: incidents_incident_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.incidents_incident_id_seq OWNED BY public.incidents.incident_id;
@@ -673,9 +673,9 @@ ALTER SEQUENCE public.incidents_incident_id_seq OWNED BY public.incidents.incide
 
 --
 -- Name: inference_jobs;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.inference_jobs (
@@ -691,9 +691,9 @@ CREATE TABLE public.inference_jobs (
 
 --
 -- Name: inference_jobs_job_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.inference_jobs_job_id_seq
@@ -706,9 +706,9 @@ CREATE SEQUENCE public.inference_jobs_job_id_seq
 
 --
 -- Name: inference_jobs_job_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.inference_jobs_job_id_seq OWNED BY public.inference_jobs.job_id;
@@ -716,9 +716,9 @@ ALTER SEQUENCE public.inference_jobs_job_id_seq OWNED BY public.inference_jobs.j
 
 --
 -- Name: media;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.media (
@@ -735,9 +735,9 @@ CREATE TABLE public.media (
 
 --
 -- Name: media_media_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.media_media_id_seq
@@ -750,9 +750,9 @@ CREATE SEQUENCE public.media_media_id_seq
 
 --
 -- Name: media_media_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.media_media_id_seq OWNED BY public.media.media_id;
@@ -760,9 +760,9 @@ ALTER SEQUENCE public.media_media_id_seq OWNED BY public.media.media_id;
 
 --
 -- Name: notifications;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.notifications (
@@ -778,9 +778,9 @@ CREATE TABLE public.notifications (
 
 --
 -- Name: notifications_notification_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.notifications_notification_id_seq
@@ -793,9 +793,9 @@ CREATE SEQUENCE public.notifications_notification_id_seq
 
 --
 -- Name: notifications_notification_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.notifications_notification_id_seq OWNED BY public.notifications.notification_id;
@@ -803,9 +803,9 @@ ALTER SEQUENCE public.notifications_notification_id_seq OWNED BY public.notifica
 
 --
 -- Name: permissions;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.permissions (
@@ -818,9 +818,9 @@ CREATE TABLE public.permissions (
 
 --
 -- Name: permissions_permission_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.permissions_permission_id_seq
@@ -833,9 +833,9 @@ CREATE SEQUENCE public.permissions_permission_id_seq
 
 --
 -- Name: permissions_permission_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.permissions_permission_id_seq OWNED BY public.permissions.permission_id;
@@ -843,9 +843,9 @@ ALTER SEQUENCE public.permissions_permission_id_seq OWNED BY public.permissions.
 
 --
 -- Name: project_members;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.project_members (
@@ -857,9 +857,9 @@ CREATE TABLE public.project_members (
 
 --
 -- Name: project_statistics;
- Type: VIEW;
- Schema: public;
- Owner: cypher_user
+-- Type: VIEW;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE VIEW public.project_statistics AS
@@ -877,9 +877,9 @@ CREATE VIEW public.project_statistics AS
 
 --
 -- Name: projects_project_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.projects_project_id_seq
@@ -892,9 +892,9 @@ CREATE SEQUENCE public.projects_project_id_seq
 
 --
 -- Name: projects_project_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.projects_project_id_seq OWNED BY public.projects.project_id;
@@ -902,9 +902,9 @@ ALTER SEQUENCE public.projects_project_id_seq OWNED BY public.projects.project_i
 
 --
 -- Name: reports;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.reports (
@@ -920,9 +920,9 @@ CREATE TABLE public.reports (
 
 --
 -- Name: reports_report_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.reports_report_id_seq
@@ -935,9 +935,9 @@ CREATE SEQUENCE public.reports_report_id_seq
 
 --
 -- Name: reports_report_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.reports_report_id_seq OWNED BY public.reports.report_id;
@@ -945,9 +945,9 @@ ALTER SEQUENCE public.reports_report_id_seq OWNED BY public.reports.report_id;
 
 --
 -- Name: role_permissions;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.role_permissions (
@@ -958,9 +958,9 @@ CREATE TABLE public.role_permissions (
 
 --
 -- Name: roles;
- Type: TABLE;
- Schema: public;
- Owner: cypher_user
+-- Type: TABLE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TABLE public.roles (
@@ -974,9 +974,9 @@ CREATE TABLE public.roles (
 
 --
 -- Name: roles_role_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.roles_role_id_seq
@@ -989,9 +989,9 @@ CREATE SEQUENCE public.roles_role_id_seq
 
 --
 -- Name: roles_role_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.roles_role_id_seq OWNED BY public.roles.role_id;
@@ -999,9 +999,9 @@ ALTER SEQUENCE public.roles_role_id_seq OWNED BY public.roles.role_id;
 
 --
 -- Name: users_user_id_seq;
- Type: SEQUENCE;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE SEQUENCE public.users_user_id_seq
@@ -1014,9 +1014,9 @@ CREATE SEQUENCE public.users_user_id_seq
 
 --
 -- Name: users_user_id_seq;
- Type: SEQUENCE OWNED BY;
- Schema: public;
- Owner: cypher_user
+-- Type: SEQUENCE OWNED BY;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.user_id;
@@ -1024,9 +1024,9 @@ ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.user_id;
 
 --
 -- Name: ai_models model_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.ai_models ALTER COLUMN model_id SET DEFAULT nextval('public.ai_models_model_id_seq'::regclass);
@@ -1034,9 +1034,9 @@ ALTER TABLE ONLY public.ai_models ALTER COLUMN model_id SET DEFAULT nextval('pub
 
 --
 -- Name: alerts alert_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.alerts ALTER COLUMN alert_id SET DEFAULT nextval('public.alerts_alert_id_seq'::regclass);
@@ -1044,9 +1044,9 @@ ALTER TABLE ONLY public.alerts ALTER COLUMN alert_id SET DEFAULT nextval('public
 
 --
 -- Name: audit_logs audit_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.audit_logs ALTER COLUMN audit_id SET DEFAULT nextval('public.audit_logs_audit_id_seq'::regclass);
@@ -1054,9 +1054,9 @@ ALTER TABLE ONLY public.audit_logs ALTER COLUMN audit_id SET DEFAULT nextval('pu
 
 --
 -- Name: cameras camera_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.cameras ALTER COLUMN camera_id SET DEFAULT nextval('public.cameras_camera_id_seq'::regclass);
@@ -1064,9 +1064,9 @@ ALTER TABLE ONLY public.cameras ALTER COLUMN camera_id SET DEFAULT nextval('publ
 
 --
 -- Name: detections detection_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.detections ALTER COLUMN detection_id SET DEFAULT nextval('public.detections_detection_id_seq'::regclass);
@@ -1074,9 +1074,9 @@ ALTER TABLE ONLY public.detections ALTER COLUMN detection_id SET DEFAULT nextval
 
 --
 -- Name: incidents incident_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.incidents ALTER COLUMN incident_id SET DEFAULT nextval('public.incidents_incident_id_seq'::regclass);
@@ -1084,9 +1084,9 @@ ALTER TABLE ONLY public.incidents ALTER COLUMN incident_id SET DEFAULT nextval('
 
 --
 -- Name: inference_jobs job_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.inference_jobs ALTER COLUMN job_id SET DEFAULT nextval('public.inference_jobs_job_id_seq'::regclass);
@@ -1094,9 +1094,9 @@ ALTER TABLE ONLY public.inference_jobs ALTER COLUMN job_id SET DEFAULT nextval('
 
 --
 -- Name: media media_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.media ALTER COLUMN media_id SET DEFAULT nextval('public.media_media_id_seq'::regclass);
@@ -1104,9 +1104,9 @@ ALTER TABLE ONLY public.media ALTER COLUMN media_id SET DEFAULT nextval('public.
 
 --
 -- Name: notifications notification_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.notifications ALTER COLUMN notification_id SET DEFAULT nextval('public.notifications_notification_id_seq'::regclass);
@@ -1114,9 +1114,9 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN notification_id SET DEFAULT n
 
 --
 -- Name: permissions permission_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.permissions ALTER COLUMN permission_id SET DEFAULT nextval('public.permissions_permission_id_seq'::regclass);
@@ -1124,9 +1124,9 @@ ALTER TABLE ONLY public.permissions ALTER COLUMN permission_id SET DEFAULT nextv
 
 --
 -- Name: projects project_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.projects ALTER COLUMN project_id SET DEFAULT nextval('public.projects_project_id_seq'::regclass);
@@ -1134,9 +1134,9 @@ ALTER TABLE ONLY public.projects ALTER COLUMN project_id SET DEFAULT nextval('pu
 
 --
 -- Name: reports report_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.reports ALTER COLUMN report_id SET DEFAULT nextval('public.reports_report_id_seq'::regclass);
@@ -1144,9 +1144,9 @@ ALTER TABLE ONLY public.reports ALTER COLUMN report_id SET DEFAULT nextval('publ
 
 --
 -- Name: roles role_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.roles ALTER COLUMN role_id SET DEFAULT nextval('public.roles_role_id_seq'::regclass);
@@ -1154,9 +1154,9 @@ ALTER TABLE ONLY public.roles ALTER COLUMN role_id SET DEFAULT nextval('public.r
 
 --
 -- Name: users user_id;
- Type: DEFAULT;
- Schema: public;
- Owner: cypher_user
+-- Type: DEFAULT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN user_id SET DEFAULT nextval('public.users_user_id_seq'::regclass);
@@ -1164,9 +1164,9 @@ ALTER TABLE ONLY public.users ALTER COLUMN user_id SET DEFAULT nextval('public.u
 
 --
 -- Name: ai_models ai_models_model_name_version_key;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.ai_models
@@ -1175,9 +1175,9 @@ ALTER TABLE ONLY public.ai_models
 
 --
 -- Name: ai_models ai_models_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.ai_models
@@ -1186,9 +1186,9 @@ ALTER TABLE ONLY public.ai_models
 
 --
 -- Name: alerts alerts_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.alerts
@@ -1197,9 +1197,9 @@ ALTER TABLE ONLY public.alerts
 
 --
 -- Name: audit_logs audit_logs_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.audit_logs
@@ -1208,9 +1208,9 @@ ALTER TABLE ONLY public.audit_logs
 
 --
 -- Name: cameras cameras_camera_code_key;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.cameras
@@ -1219,9 +1219,9 @@ ALTER TABLE ONLY public.cameras
 
 --
 -- Name: cameras cameras_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.cameras
@@ -1230,9 +1230,9 @@ ALTER TABLE ONLY public.cameras
 
 --
 -- Name: detections detections_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.detections
@@ -1241,9 +1241,9 @@ ALTER TABLE ONLY public.detections
 
 --
 -- Name: incidents incidents_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.incidents
@@ -1252,9 +1252,9 @@ ALTER TABLE ONLY public.incidents
 
 --
 -- Name: inference_jobs inference_jobs_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.inference_jobs
@@ -1263,9 +1263,9 @@ ALTER TABLE ONLY public.inference_jobs
 
 --
 -- Name: media media_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.media
@@ -1274,9 +1274,9 @@ ALTER TABLE ONLY public.media
 
 --
 -- Name: notifications notifications_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.notifications
@@ -1285,9 +1285,9 @@ ALTER TABLE ONLY public.notifications
 
 --
 -- Name: permissions permissions_permission_name_key;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.permissions
@@ -1296,9 +1296,9 @@ ALTER TABLE ONLY public.permissions
 
 --
 -- Name: permissions permissions_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.permissions
@@ -1307,9 +1307,9 @@ ALTER TABLE ONLY public.permissions
 
 --
 -- Name: project_members project_members_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.project_members
@@ -1318,9 +1318,9 @@ ALTER TABLE ONLY public.project_members
 
 --
 -- Name: projects projects_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.projects
@@ -1329,9 +1329,9 @@ ALTER TABLE ONLY public.projects
 
 --
 -- Name: reports reports_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.reports
@@ -1340,9 +1340,9 @@ ALTER TABLE ONLY public.reports
 
 --
 -- Name: role_permissions role_permissions_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.role_permissions
@@ -1351,9 +1351,9 @@ ALTER TABLE ONLY public.role_permissions
 
 --
 -- Name: roles roles_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.roles
@@ -1362,9 +1362,9 @@ ALTER TABLE ONLY public.roles
 
 --
 -- Name: roles roles_role_name_key;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.roles
@@ -1373,9 +1373,9 @@ ALTER TABLE ONLY public.roles
 
 --
 -- Name: users users_email_key;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.users
@@ -1384,9 +1384,9 @@ ALTER TABLE ONLY public.users
 
 --
 -- Name: users users_pkey;
- Type: CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.users
@@ -1395,9 +1395,9 @@ ALTER TABLE ONLY public.users
 
 --
 -- Name: idx_alerts_incident;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_alerts_incident ON public.alerts USING btree (incident_id);
@@ -1405,9 +1405,9 @@ CREATE INDEX idx_alerts_incident ON public.alerts USING btree (incident_id);
 
 --
 -- Name: idx_alerts_status;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_alerts_status ON public.alerts USING btree (alert_status);
@@ -1415,9 +1415,9 @@ CREATE INDEX idx_alerts_status ON public.alerts USING btree (alert_status);
 
 --
 -- Name: idx_cameras_project;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_cameras_project ON public.cameras USING btree (project_id);
@@ -1425,9 +1425,9 @@ CREATE INDEX idx_cameras_project ON public.cameras USING btree (project_id);
 
 --
 -- Name: idx_cameras_status;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_cameras_status ON public.cameras USING btree (camera_status);
@@ -1435,9 +1435,9 @@ CREATE INDEX idx_cameras_status ON public.cameras USING btree (camera_status);
 
 --
 -- Name: idx_detections_camera;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_detections_camera ON public.detections USING btree (camera_id);
@@ -1445,9 +1445,9 @@ CREATE INDEX idx_detections_camera ON public.detections USING btree (camera_id);
 
 --
 -- Name: idx_detections_job;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_detections_job ON public.detections USING btree (job_id);
@@ -1455,9 +1455,9 @@ CREATE INDEX idx_detections_job ON public.detections USING btree (job_id);
 
 --
 -- Name: idx_detections_object;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_detections_object ON public.detections USING btree (detected_object);
@@ -1465,9 +1465,9 @@ CREATE INDEX idx_detections_object ON public.detections USING btree (detected_ob
 
 --
 -- Name: idx_detections_time;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_detections_time ON public.detections USING btree (detected_at);
@@ -1475,9 +1475,9 @@ CREATE INDEX idx_detections_time ON public.detections USING btree (detected_at);
 
 --
 -- Name: idx_incidents_camera;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_incidents_camera ON public.incidents USING btree (camera_id);
@@ -1485,9 +1485,9 @@ CREATE INDEX idx_incidents_camera ON public.incidents USING btree (camera_id);
 
 --
 -- Name: idx_incidents_project;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_incidents_project ON public.incidents USING btree (project_id);
@@ -1495,9 +1495,9 @@ CREATE INDEX idx_incidents_project ON public.incidents USING btree (project_id);
 
 --
 -- Name: idx_incidents_severity;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_incidents_severity ON public.incidents USING btree (severity);
@@ -1505,9 +1505,9 @@ CREATE INDEX idx_incidents_severity ON public.incidents USING btree (severity);
 
 --
 -- Name: idx_incidents_status;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_incidents_status ON public.incidents USING btree (status);
@@ -1515,9 +1515,9 @@ CREATE INDEX idx_incidents_status ON public.incidents USING btree (status);
 
 --
 -- Name: idx_jobs_camera;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_jobs_camera ON public.inference_jobs USING btree (camera_id);
@@ -1525,9 +1525,9 @@ CREATE INDEX idx_jobs_camera ON public.inference_jobs USING btree (camera_id);
 
 --
 -- Name: idx_jobs_model;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_jobs_model ON public.inference_jobs USING btree (model_id);
@@ -1535,9 +1535,9 @@ CREATE INDEX idx_jobs_model ON public.inference_jobs USING btree (model_id);
 
 --
 -- Name: idx_jobs_status;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_jobs_status ON public.inference_jobs USING btree (status);
@@ -1545,9 +1545,9 @@ CREATE INDEX idx_jobs_status ON public.inference_jobs USING btree (status);
 
 --
 -- Name: idx_notifications_status;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_notifications_status ON public.notifications USING btree (notification_status);
@@ -1555,9 +1555,9 @@ CREATE INDEX idx_notifications_status ON public.notifications USING btree (notif
 
 --
 -- Name: idx_notifications_user;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_notifications_user ON public.notifications USING btree (user_id);
@@ -1565,9 +1565,9 @@ CREATE INDEX idx_notifications_user ON public.notifications USING btree (user_id
 
 --
 -- Name: idx_projects_status;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_projects_status ON public.projects USING btree (status);
@@ -1575,9 +1575,9 @@ CREATE INDEX idx_projects_status ON public.projects USING btree (status);
 
 --
 -- Name: idx_users_email;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_users_email ON public.users USING btree (email);
@@ -1585,9 +1585,9 @@ CREATE INDEX idx_users_email ON public.users USING btree (email);
 
 --
 -- Name: idx_users_role;
- Type: INDEX;
- Schema: public;
- Owner: cypher_user
+-- Type: INDEX;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE INDEX idx_users_role ON public.users USING btree (role_id);
@@ -1595,9 +1595,9 @@ CREATE INDEX idx_users_role ON public.users USING btree (role_id);
 
 --
 -- Name: camera_dashboard _RETURN;
- Type: RULE;
- Schema: public;
- Owner: cypher_user
+-- Type: RULE;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE OR REPLACE VIEW public.camera_dashboard AS
@@ -1614,9 +1614,9 @@ CREATE OR REPLACE VIEW public.camera_dashboard AS
 
 --
 -- Name: cameras trg_cameras_updated;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_cameras_updated BEFORE UPDATE ON public.cameras FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1624,9 +1624,9 @@ CREATE TRIGGER trg_cameras_updated BEFORE UPDATE ON public.cameras FOR EACH ROW 
 
 --
 -- Name: cameras trg_cameras_updated_at;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_cameras_updated_at BEFORE UPDATE ON public.cameras FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1634,9 +1634,9 @@ CREATE TRIGGER trg_cameras_updated_at BEFORE UPDATE ON public.cameras FOR EACH R
 
 --
 -- Name: incidents trg_close_alerts;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_close_alerts AFTER UPDATE ON public.incidents FOR EACH ROW EXECUTE FUNCTION public.close_alerts_for_closed_incidents();
@@ -1644,9 +1644,9 @@ CREATE TRIGGER trg_close_alerts AFTER UPDATE ON public.incidents FOR EACH ROW EX
 
 --
 -- Name: incidents trg_incident_changes;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_incident_changes AFTER UPDATE ON public.incidents FOR EACH ROW EXECUTE FUNCTION public.log_incident_changes();
@@ -1654,9 +1654,9 @@ CREATE TRIGGER trg_incident_changes AFTER UPDATE ON public.incidents FOR EACH RO
 
 --
 -- Name: projects trg_projects_updated;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_projects_updated BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1664,9 +1664,9 @@ CREATE TRIGGER trg_projects_updated BEFORE UPDATE ON public.projects FOR EACH RO
 
 --
 -- Name: projects trg_projects_updated_at;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1674,9 +1674,9 @@ CREATE TRIGGER trg_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH
 
 --
 -- Name: roles trg_roles_updated;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_roles_updated BEFORE UPDATE ON public.roles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1684,9 +1684,9 @@ CREATE TRIGGER trg_roles_updated BEFORE UPDATE ON public.roles FOR EACH ROW EXEC
 
 --
 -- Name: roles trg_roles_updated_at;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_roles_updated_at BEFORE UPDATE ON public.roles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1694,9 +1694,9 @@ CREATE TRIGGER trg_roles_updated_at BEFORE UPDATE ON public.roles FOR EACH ROW E
 
 --
 -- Name: users trg_users_updated;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_users_updated BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1704,9 +1704,9 @@ CREATE TRIGGER trg_users_updated BEFORE UPDATE ON public.users FOR EACH ROW EXEC
 
 --
 -- Name: users trg_users_updated_at;
- Type: TRIGGER;
- Schema: public;
- Owner: cypher_user
+-- Type: TRIGGER;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -1714,9 +1714,9 @@ CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW E
 
 --
 -- Name: alerts fk_alert_incident;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.alerts
@@ -1725,9 +1725,9 @@ ALTER TABLE ONLY public.alerts
 
 --
 -- Name: audit_logs fk_audit_user;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.audit_logs
@@ -1736,9 +1736,9 @@ ALTER TABLE ONLY public.audit_logs
 
 --
 -- Name: cameras fk_camera_project;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.cameras
@@ -1747,9 +1747,9 @@ ALTER TABLE ONLY public.cameras
 
 --
 -- Name: detections fk_detection_camera;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.detections
@@ -1758,9 +1758,9 @@ ALTER TABLE ONLY public.detections
 
 --
 -- Name: detections fk_detection_job;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.detections
@@ -1769,9 +1769,9 @@ ALTER TABLE ONLY public.detections
 
 --
 -- Name: incidents fk_incident_camera;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.incidents
@@ -1780,9 +1780,9 @@ ALTER TABLE ONLY public.incidents
 
 --
 -- Name: incidents fk_incident_detection;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.incidents
@@ -1791,9 +1791,9 @@ ALTER TABLE ONLY public.incidents
 
 --
 -- Name: incidents fk_incident_project;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.incidents
@@ -1802,9 +1802,9 @@ ALTER TABLE ONLY public.incidents
 
 --
 -- Name: incidents fk_incident_user;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.incidents
@@ -1813,9 +1813,9 @@ ALTER TABLE ONLY public.incidents
 
 --
 -- Name: inference_jobs fk_job_camera;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.inference_jobs
@@ -1824,9 +1824,9 @@ ALTER TABLE ONLY public.inference_jobs
 
 --
 -- Name: inference_jobs fk_job_model;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.inference_jobs
@@ -1835,9 +1835,9 @@ ALTER TABLE ONLY public.inference_jobs
 
 --
 -- Name: media fk_media_detection;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.media
@@ -1846,9 +1846,9 @@ ALTER TABLE ONLY public.media
 
 --
 -- Name: media fk_media_incident;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.media
@@ -1857,9 +1857,9 @@ ALTER TABLE ONLY public.media
 
 --
 -- Name: notifications fk_notification_alert;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.notifications
@@ -1868,9 +1868,9 @@ ALTER TABLE ONLY public.notifications
 
 --
 -- Name: notifications fk_notification_user;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.notifications
@@ -1879,9 +1879,9 @@ ALTER TABLE ONLY public.notifications
 
 --
 -- Name: role_permissions fk_permission;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.role_permissions
@@ -1890,9 +1890,9 @@ ALTER TABLE ONLY public.role_permissions
 
 --
 -- Name: project_members fk_pm_project;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.project_members
@@ -1901,9 +1901,9 @@ ALTER TABLE ONLY public.project_members
 
 --
 -- Name: project_members fk_pm_user;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.project_members
@@ -1912,9 +1912,9 @@ ALTER TABLE ONLY public.project_members
 
 --
 -- Name: projects fk_project_creator;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.projects
@@ -1923,9 +1923,9 @@ ALTER TABLE ONLY public.projects
 
 --
 -- Name: reports fk_report_project;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.reports
@@ -1934,9 +1934,9 @@ ALTER TABLE ONLY public.reports
 
 --
 -- Name: reports fk_report_user;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.reports
@@ -1945,9 +1945,9 @@ ALTER TABLE ONLY public.reports
 
 --
 -- Name: role_permissions fk_role;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.role_permissions
@@ -1956,9 +1956,9 @@ ALTER TABLE ONLY public.role_permissions
 
 --
 -- Name: users fk_user_role;
- Type: FK CONSTRAINT;
- Schema: public;
- Owner: cypher_user
+-- Type: FK CONSTRAINT;
+-- Schema: public;
+-- Owner: cypher_user
 --
 
 ALTER TABLE ONLY public.users
@@ -1967,11 +1967,10 @@ ALTER TABLE ONLY public.users
 
 --
 -- Name: SCHEMA public;
- Type: ACL;
- Schema: -;
+-- Type: ACL;
+-- Schema: -;
 
 
 --
 -- PostgreSQL database dump complete
 --
-

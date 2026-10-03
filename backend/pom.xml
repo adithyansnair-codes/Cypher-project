@@ -78,6 +78,25 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!--
+			Flyway owns the schema. In Spring Boot 4 the Flyway auto-configuration
+			lives in its own module (spring-boot-flyway, pulled in by this starter),
+			so declaring org.flywaydb:flyway-core alone is NOT enough: Spring Boot
+			would silently skip migration and Hibernate would then fail schema
+			validation with "missing table [users]".
+			  spring-boot-starter-flyway  Flyway + auto-configuration
+			  flyway-database-postgresql  PostgreSQL dialect support (Flyway 10+)
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

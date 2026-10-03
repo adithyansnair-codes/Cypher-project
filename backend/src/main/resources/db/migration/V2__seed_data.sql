@@ -141,6 +141,15 @@ WHERE NOT EXISTS (
       AND pm.user_id = u.user_id
 );
 
+-- ------------------------------------------------------- inference_jobs ----
+-- Must come before `detections`: every detection references a job_id, and the
+-- column is NOT NULL, so seeding them in the wrong order fails.
+INSERT INTO inference_jobs (camera_id, model_id, started_at, status, frames_processed)
+SELECT (SELECT camera_id FROM cameras WHERE camera_code = 'CAM-001'),
+       (SELECT model_id FROM ai_models WHERE model_name = 'YOLOv11' AND version = '1.0'),
+       CURRENT_TIMESTAMP, 'COMPLETED', 0
+WHERE NOT EXISTS (SELECT 1 FROM inference_jobs);
+
 -- ---------------------------------------------------------- detections -----
 -- Two sample detections attached to the running inference job, so the incident
 -- and media rows below have something real to reference.
@@ -211,11 +220,4 @@ SELECT (SELECT detection_id FROM detections
 WHERE NOT EXISTS (
     SELECT 1 FROM media WHERE file_path = '/media/demo/detection-cam002-person.jpg'
 );
-
--- ------------------------------------------------------- inference_jobs ----
-INSERT INTO inference_jobs (camera_id, model_id, started_at, status, frames_processed)
-SELECT (SELECT camera_id FROM cameras WHERE camera_code = 'CAM-001'),
-       (SELECT model_id FROM ai_models WHERE model_name = 'YOLOv11' AND version = '1.0'),
-       CURRENT_TIMESTAMP, 'COMPLETED', 0
-WHERE NOT EXISTS (SELECT 1 FROM inference_jobs);
 
