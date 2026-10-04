@@ -1,5 +1,6 @@
 package com.cypher.backend.service;
 
+import com.cypher.backend.dto.request.IncidentIngestRequest;
 import com.cypher.backend.dto.response.DashboardStatsResponse;
 import com.cypher.backend.dto.response.IncidentResponse;
 import com.cypher.backend.entity.Camera;
@@ -7,6 +8,8 @@ import com.cypher.backend.entity.Incident;
 import com.cypher.backend.repository.AlertRepository;
 import com.cypher.backend.repository.CameraRepository;
 import com.cypher.backend.repository.IncidentRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +47,9 @@ public class IncidentService {
     private final IncidentRepository incidentRepository;
     private final CameraRepository cameraRepository;
     private final AlertRepository alertRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public IncidentService(IncidentRepository incidentRepository,
                            CameraRepository cameraRepository,
@@ -128,6 +134,79 @@ public class IncidentService {
                 cameraRepository.count(),
                 alertRepository.countByAlertStatus("PENDING")
         );
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Ingest: the AI engine's entry point (MoSCoW M-05).
+    // ------------------------------------------------------------------------
+
+    /**
+     * Records an incident reported by the detection pipeline.
+     *
+     * <p>Delegates to the {@code create_incident_with_alert} stored procedure so
+     * the incident and its alert are written in one transaction, then fires the
+     * same priority rules the database function uses.
+     *
+     * @param request  the detection payload
+     * @param reportedBy user id to assign, or null for unassigned
+     */
+    @Transactional
+    public IncidentResponse ingest(IncidentIngestRequest request, Long reportedBy) {
+        Camera camera = cameraRepository.findById(request.getCameraId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No camera with id " + request.getCameraId()));
+
+        String severity = (request.getSeverity() == null || request.getSeverity().isBlank())
+                ? deriveSeverity(request.getDetectedObject(), request.getConfidence())
+                : request.getSeverity().trim().toUpperCase();
+
+        if (!List.of("LOW", "MEDIUM", "HIGH", "CRITICAL").contains(severity)) {
+            throw new IllegalArgumentException(
+                    "severity must be one of LOW, MEDIUM, HIGH, CRITICAL (got " + severity + ")");
+        }
+
+        entityManager.createNativeQuery(
+                "CALL create_incident_with_alert(:projectId, :cameraId, :title, :description, :severity, :assignedTo)")
+                .setParameter("projectId", camera.getProjectId())
+                .setParameter("cameraId", camera.getCameraId())
+                .setParameter("title", request.getTitle())
+                .setParameter("description", request.getDescription())
+                .setParameter("severity", severity)
+                .setParameter("assignedTo", reportedBy)
+                .executeUpdate();
+
+        // The procedure does not return the new id, so read back the newest
+        // incident for this camera -- created in the same transaction.
+        Incident saved = incidentRepository
+                .findByCameraIdOrderByOccurredAtDesc(camera.getCameraId())
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Incident was created but could not be read back"));
+
+        return enrich(List.of(saved)).get(0);
+    }
+
+    /**
+     * Priority rules from the project specification. High-risk objects are
+     * CRITICAL regardless of confidence; anything else is graded by confidence.
+     * Kept in the gateway so a new detector cannot invent its own vocabulary.
+     */
+    static String deriveSeverity(String detectedObject, Double confidence) {
+        String object = detectedObject == null ? "" : detectedObject.trim().toLowerCase();
+        double c = confidence == null ? 0d : confidence;
+
+        if (object.equals("weapon") || object.equals("fire") || object.equals("gun")
+                || object.equals("knife")) {
+            return SEVERITY_CRITICAL;
+        }
+        if (object.equals("smoke") || object.equals("fall")) {
+            return c >= 85 ? SEVERITY_HIGH : "MEDIUM";
+        }
+        if (c >= 90) return SEVERITY_HIGH;
+        if (c >= 70) return "MEDIUM";
+        return "LOW";
     }
 
     // ------------------------------------------------------------------------

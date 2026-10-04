@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#f5f5f7">
+
+    <title>CYPHER / OPS</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-symbol">
+                <span>C</span>
+            </div>
+
+            <div class="brand-text">
+                CYPHER<span>/</span>OPS
+            </div>
+        </div>
+
+
+        <nav class="navigation">
+
+            <div class="nav-group">
+
+                <div class="nav-label">
+                    OPERATIONS
+                </div>
+
+                <button class="nav-item active">
+                    <span class="nav-icon">◈</span>
+                    <span>Live cockpit</span>
+                    <span class="nav-count">07</span>
+                </button>
+
+                <button class="nav-item">
+                    <span class="nav-icon">⌁</span>
+                    <span>Analytics</span>
+                </button>
+
+                <button class="nav-item">
+                    <span class="nav-icon">▤</span>
+                    <span>Audit trail</span>
+                </button>
+
+            </div>
+
+
+            <div class="nav-group">
+
+                <div class="nav-label">
+                    MONITORED ASSETS
+                </div>
+
+                <div class="camera-item">
+                    <span class="status-dot"></span>
+                    <span>Lab Entrance</span>
+                    <span class="camera-live">LIVE</span>
+                </div>
+
+                <div class="camera-item">
+                    <span class="status-dot"></span>
+                    <span>North Corridor</span>
+                    <span class="camera-live">LIVE</span>
+                </div>
+
+                <div class="camera-item">
+                    <span class="status-dot"></span>
+                    <span>Server Room</span>
+                    <span class="camera-live">LIVE</span>
+                </div>
+
+            </div>
+
+        </nav>
+
+
+        <!-- Sidebar bottom -->
+
+        <div class="sidebar-bottom">
+
+            <div class="profile">
+
+                <div class="profile-avatar">
+                    CA
+                </div>
+
+                <div class="profile-info">
+                    <strong>Cypher Admin</strong>
+                    <span>Administrator</span>
+                </div>
+
+                <button class="profile-menu">
+                    ···
+                </button>
+
+            </div>
+
+            <button class="auth-logout" id="logoutButton" type="button" title="Sign out">Sign out</button>
+            <div class="connection">
+                <span class="status-dot"></span>
+                Realtime connected
+            </div>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+
+    <main class="main">
+
+        <!-- HEADER -->
+
+        <header class="header">
+
+            <div class="header-title">
+
+                <div class="eyebrow">
+                    WEDNESDAY · 19 JUL 2026
+                </div>
+
+                <h1>
+                    Live cockpit
+                </h1>
+
+                <p>
+                    A live overview of your visual intelligence network.
+                </p>
+
+            </div>
+
+
+            <div class="header-actions">
+
+                <div class="system-pill">
+                    <span class="status-dot"></span>
+                    SYSTEM LIVE
+                </div>
+
+                <button class="icon-button" id="refreshButton">
+                    ↻
+                </button>
+
+                <button class="user-button">
+                    CA
+                    <span>⌄</span>
+                </button>
+
+                <button
+                    class="theme-button"
+                    id="themeToggle"
+                    aria-label="Toggle dark mode"
+                >
+                    <span class="theme-sun">☼</span>
+                    <span class="theme-moon">◐</span>
+                </button>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =====================================================
+             HERO / DEMO CONTROL
+        ====================================================== -->
+
+        <section class="hero">
+
+            <div class="hero-copy">
+
+                <div class="eyebrow">
+                    CONTROL PLANE
+                </div>
+
+                <h2>
+                    See the signal
+                    <span>before the noise.</span>
+                </h2>
+
+                <p>
+                    Monitor visual intelligence, detect incidents,
+                    and coordinate response from one operational surface.
+                </p>
+
+            </div>
+
+
+            <div class="hero-actions">
+
+                <button class="button secondary" id="healthButton">
+                    <span>＋</span>
+                    Health event
+                </button>
+
+                <button class="button danger" id="threatButton">
+                    <span>△</span>
+                    Simulate threat
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             STATS
+        ====================================================== -->
+
+        <section class="stats">
+
+            <article class="stat-card">
+
+                <div class="stat-top">
+                    <span>Open incidents</span>
+                    <span class="stat-symbol neutral">◉</span>
+                </div>
+
+                <div class="stat-number" id="statOpen">
+                    07
+                </div>
+
+                <div class="stat-description">
+                    Requires response
+                </div>
+
+                <div class="stat-line"></div>
+
+            </article>
+
+
+            <article class="stat-card">
+
+                <div class="stat-top">
+                    <span>Critical priority</span>
+                    <span class="stat-symbol critical">!</span>
+                </div>
+
+                <div class="stat-number" id="statCritical">
+                    02
+                </div>
+
+                <div class="stat-description">
+                    Immediate dispatch
+                </div>
+
+                <div class="stat-line critical-line"></div>
+
+            </article>
+
+
+            <article class="stat-card">
+
+                <div class="stat-top">
+                    <span>High priority</span>
+                    <span class="stat-symbol high">⌁</span>
+                </div>
+
+                <div class="stat-number" id="statHigh">
+                    03
+                </div>
+
+                <div class="stat-description">
+                    Escalated monitoring
+                </div>
+
+                <div class="stat-line high-line"></div>
+
+            </article>
+
+
+            <article class="stat-card">
+
+                <div class="stat-top">
+                    <span>Resolved today</span>
+                    <span class="stat-symbol resolved">✓</span>
+                </div>
+
+                <div class="stat-number" id="statResolved">
+                    18
+                </div>
+
+                <div class="stat-description">
+                    Closed workflow
+                </div>
+
+                <div class="stat-line resolved-line"></div>
+
+            </article>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             WORKSPACE
+        ====================================================== -->
+
+        <section class="workspace">
+
+
+            <!-- INCIDENTS -->
+
+            <article class="panel incidents-panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <div class="eyebrow">
+                            INCIDENT STREAM
+                        </div>
+
+                        <h3>
+                            Latest signals
+                        </h3>
+                    </div>
+
+
+                    <div class="filters">
+
+                        <button class="filter active">
+                            ALL
+                        </button>
+
+                        <button class="filter">
+                            CRITICAL
+                        </button>
+
+                        <button class="filter">
+                            HIGH
+                        </button>
+
+                        <button class="filter">
+                            MEDIUM
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="incident-list" id="incidentList">
+
+
+                    <!-- Incident -->
+
+                    <button class="incident">
+
+                        <span class="incident-indicator critical"></span>
+
+                        <div class="incident-content">
+
+                            <div class="incident-meta">
+                                <span class="tag critical-tag">
+                                    CRITICAL / THREAT
+                                </span>
+                            </div>
+
+                            <strong>
+                                Weapon detected
+                            </strong>
+
+                            <small>
+                                North Corridor · 14:52
+                            </small>
+
+                        </div>
+
+                        <span class="incident-status critical-text">
+                            OPEN
+                        </span>
+
+                        <span class="arrow">
+                            →
+                        </span>
+
+                    </button>
+
+
+
+                    <!-- Incident -->
+
+                    <button class="incident">
+
+                        <span class="incident-indicator high"></span>
+
+                        <div class="incident-content">
+
+                            <div class="incident-meta">
+                                <span class="tag high-tag">
+                                    HIGH / HEALTH
+                                </span>
+                            </div>
+
+                            <strong>
+                                Stationary person
+                            </strong>
+
+                            <small>
+                                Lab Entrance · 14:48
+                            </small>
+
+                        </div>
+
+                        <span class="incident-status">
+                            ACKNOWLEDGED
+                        </span>
+
+                        <span class="arrow">
+                            →
+                        </span>
+
+                    </button>
+
+
+
+                    <!-- Incident -->
+
+                    <button class="incident">
+
+                        <span class="incident-indicator medium"></span>
+
+                        <div class="incident-content">
+
+                            <div class="incident-meta">
+                                <span class="tag medium-tag">
+                                    MEDIUM / MOTION
+                                </span>
+                            </div>
+
+                            <strong>
+                                Unusual movement
+                            </strong>
+
+                            <small>
+                                Server Room · 14:31
+                            </small>
+
+                        </div>
+
+                        <span class="incident-status">
+                            OPEN
+                        </span>
+
+                        <span class="arrow">
+                            →
+                        </span>
+
+                    </button>
+
+
+
+                    <!-- Incident -->
+
+                    <button class="incident">
+
+                        <span class="incident-indicator resolved"></span>
+
+                        <div class="incident-content">
+
+                            <div class="incident-meta">
+                                <span class="tag resolved-tag">
+                                    RESOLVED / ACCESS
+                                </span>
+                            </div>
+
+                            <strong>
+                                Restricted entry
+                            </strong>
+
+                            <small>
+                                North Corridor · 13:58
+                            </small>
+
+                        </div>
+
+                        <span class="incident-status resolved-text">
+                            RESOLVED
+                        </span>
+
+                        <span class="arrow">
+                            →
+                        </span>
+
+                    </button>
+
+
+                </div>
+
+            </article>
+
+
+
+            <!-- RIGHT SIDE -->
+
+            <div class="right-column">
+
+
+                <!-- CAMERA -->
+
+                <article class="panel camera-panel">
+
+                    <div class="panel-header camera-header">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                SELECTED FEED
+                            </div>
+
+                            <h3>
+                                North Corridor
+                            </h3>
+
+                        </div>
+
+                        <div class="mini-live">
+                            <span class="status-dot"></span>
+                            LIVE
+                        </div>
+
+                    </div>
+
+
+                    <div class="camera-feed">
+
+                        <div class="camera-grid"></div>
+
+                        <div class="camera-glow"></div>
+
+                        <div class="camera-scan"></div>
+
+
+                        <div class="camera-top">
+
+                            <span>
+                                CAM-01
+                            </span>
+
+                            <span>
+                                WEAPON / 94%
+                            </span>
+
+                        </div>
+
+
+                        <div class="detection-box">
+
+                            <span>
+                                WEAPON / 94%
+                            </span>
+
+                        </div>
+
+
+                        <div class="camera-bottom">
+
+                            <span>
+                                ● REC
+                            </span>
+
+                            <span>
+                                1920 × 1080
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="feed-info">
+
+                        <span>
+                            <i></i>
+                            Building A / Level 1
+                        </span>
+
+                        <span>
+                            15 FPS
+                        </span>
+
+                    </div>
+
+                </article>
+
+
+
+                <!-- REPORT -->
+
+                <article class="panel report-panel">
+
+                    <div class="eyebrow">
+                        REPORTING
+                    </div>
+
+                    <h3>
+                        Export incident data
+                    </h3>
+
+                    <p>
+                        Generate supervisor-ready reports
+                        from the reporting worker.
+                    </p>
+
+
+                    <div class="report-buttons">
+
+                        <button>
+                            PDF
+                        </button>
+
+                        <button>
+                            XLSX
+                        </button>
+
+                        <button>
+                            CSV
+                        </button>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             LOWER INFORMATION
+        ====================================================== -->
+
+        <section class="lower-grid">
+
+
+            <!-- SYSTEM HEALTH -->
+
+            <article class="panel health-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            SYSTEM HEALTH
+                        </div>
+
+                        <h3>
+                            Platform status
+                        </h3>
+
+                    </div>
+
+                    <div class="healthy">
+                        <span class="status-dot"></span>
+                        HEALTHY
+                    </div>
+
+                </div>
+
+
+                <div class="health-grid">
+
+                    <div class="health-item">
+                        <span>Gateway</span>
+                        <strong>Healthy</strong>
+                    </div>
+
+                    <div class="health-item">
+                        <span>AI engine</span>
+                        <strong>Healthy</strong>
+                    </div>
+
+                    <div class="health-item">
+                        <span>Database</span>
+                        <strong>Healthy</strong>
+                    </div>
+
+                    <div class="health-item">
+                        <span>Alerts</span>
+                        <strong class="warning">
+                            2 pending
+                        </strong>
+                    </div>
+
+                </div>
+
+            </article>
+
+
+
+            <!-- RESPONSE -->
+
+            <article class="panel response-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            RESPONSE
+                        </div>
+
+                        <h3>
+                            Average response
+                        </h3>
+
+                    </div>
+
+                    <strong class="response-number">
+                        02:14
+                    </strong>
+
+                </div>
+
+
+                <div class="chart">
+
+                    <span style="height:35%"></span>
+                    <span style="height:50%"></span>
+                    <span style="height:42%"></span>
+                    <span style="height:65%"></span>
+                    <span style="height:54%"></span>
+                    <span style="height:79%"></span>
+                    <span style="height:62%"></span>
+                    <span style="height:90%"></span>
+                    <span style="height:72%"></span>
+
+                </div>
+
+                <div class="chart-label">
+                    LAST 7 DAYS · OPERATIONAL TREND
+                </div>
+
+            </article>
+
+        </section>
+
+
+
+        <!-- FOOTER -->
+
+        <footer>
+
+            <span>
+                CYPHER / OPS
+                <b>·</b>
+                CONTROL PLANE
+            </span>
+
+            <span>
+                GATEWAY SYNCED 14:52:08 UTC
+                <b>·</b>
+                V1.0
+            </span>
+
+        </footer>
+
+    </main>
+
+</div>
+
+
+
+<!-- =============================================================
+     JAVASCRIPT
+============================================================= -->
+
+
+<!-- =============================================================
+     AUTH OVERLAY
+     Declared BEFORE the script so the script can find it on parse.
+============================================================= -->
+
+<div class="auth-overlay" id="authOverlay">
+    <form class="auth-card" id="authForm" autocomplete="on">
+        <div class="auth-brand">CYPHER<span>/</span>OPS</div>
+        <p class="auth-sub">Operator sign-in</p>
+
+        <label class="auth-label" for="authEmail">Email</label>
+        <input class="auth-input" id="authEmail" name="email" type="email"
+               placeholder="operator@cypher.com" required autocomplete="username">
+
+        <label class="auth-label" for="authPassword">Password</label>
+        <input class="auth-input" id="authPassword" name="password" type="password"
+               placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required
+               autocomplete="current-password">
+
+        <button class="auth-submit" id="authSubmit" type="submit">Sign in</button>
+        <p class="auth-error" id="authError" role="alert"></p>
+    </form>
+</div>
+
+<script>
+
+
+/* =========================================================
+   CYPHER / OPS — cockpit runtime
+
+   Replaces the original mock script. Everything below talks to the real
+   Spring Boot API on the same origin:
+
+     POST /auth/login            -> { token }
+     GET  /api/dashboard/stats   -> the four counters
+     GET  /api/incidents         -> the incident stream
+     GET  /api/cameras           -> monitored assets
+     POST /api/incidents/{id}/acknowledge
+     POST /api/incidents/{id}/resolve
+
+   The JWT is kept in localStorage and replayed as a bearer token. On a 401 the
+   token is discarded and the sign-in overlay reappears.
+   ========================================================= */
+
+const API = "";                                  // same origin as the page
+const TOKEN_KEY = "cypher-token";
+const REFRESH_MS = 15000;                        // poll cadence until WebSockets land
+
+let refreshTimer = null;
+
+
+/* ---------------------------------------------------------- token store -- */
+
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+}
+
+function clearToken() {
+    localStorage.removeItem(TOKEN_KEY);
+}
+
+
+/* ------------------------------------------------------------- http ------ */
+
+async function api(path, options = {}) {
+    const headers = Object.assign({}, options.headers);
+    const token = getToken();
+
+    if (token) headers["Authorization"] = "Bearer " + token;
+    if (options.body) headers["Content-Type"] = "application/json";
+
+    const response = await fetch(API + path, Object.assign({}, options, { headers }));
+
+    if (response.status === 401) {
+        clearToken();
+        showAuthOverlay("Session expired. Please sign in again.");
+        throw new Error("unauthorized");
+    }
+    if (!response.ok) {
+        let detail = response.statusText;
+        try {
+            const body = await response.json();
+            detail = body.error || body.message || detail;
+        } catch (_) { /* not JSON */ }
+        throw new Error(detail);
+    }
+    if (response.status === 204) return null;
+
+    const type = response.headers.get("content-type") || "";
+    return type.includes("application/json") ? response.json() : response.text();
+}
+
+
+/* --------------------------------------------------------------- auth ---- */
+
+const authOverlay = document.getElementById("authOverlay");
+const authForm = document.getElementById("authForm");
+const authError = document.getElementById("authError");
+const authSubmit = document.getElementById("authSubmit");
+
+function showAuthOverlay(message) {
+    if (authOverlay) authOverlay.classList.add("visible");
+    if (message) authError.textContent = message;
+    stopRefresh();
+}
+
+function hideAuthOverlay() {
+    if (authOverlay) authOverlay.classList.remove("visible");
+    authError.textContent = "";
+}
+
+if (authForm) {
+    authForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        authError.textContent = "";
+        authSubmit.disabled = true;
+        authSubmit.textContent = "Signing in\u2026";
+
+        try {
+            const body = JSON.stringify({
+                email: document.getElementById("authEmail").value.trim(),
+                password: document.getElementById("authPassword").value
+            });
+            const data = await api("/auth/login", { method: "POST", body });
+
+            if (!data || !data.token) throw new Error("No token returned");
+            setToken(data.token);
+            document.getElementById("authPassword").value = "";
+            hideAuthOverlay();
+            await refreshAll();
+            startRefresh();
+        } catch (err) {
+            authError.textContent = err.message === "unauthorized"
+                ? "Invalid email or password."
+                : err.message;
+        } finally {
+            authSubmit.disabled = false;
+            authSubmit.textContent = "Sign in";
+        }
+    });
+}
+
+const logoutButton = document.getElementById("logoutButton");
+if (logoutButton) {
+    logoutButton.addEventListener("click", () => {
+        clearToken();
+        stopRefresh();
+        showAuthOverlay("Signed out.");
+    });
+}
+
+
+/* ------------------------------------------------------------- stats ----- */
+
+async function loadStats() {
+    const s = await api("/api/dashboard/stats");
+    setText("statOpen", s.openIncidents);
+    setText("statCritical", s.criticalPriority);
+    setText("statHigh", s.highPriority);
+    setText("statResolved", s.resolvedToday);
+    return s;
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(value).padStart(2, "0");
+}
+
+
+/* --------------------------------------------------------- incidents ----- */
+
+const incidentList = document.getElementById("incidentList");
+let activeFilter = "ALL";
+
+async function loadIncidents() {
+    const query = activeFilter === "ALL" ? "" : "?severity=" + encodeURIComponent(activeFilter);
+    const incidents = await api("/api/incidents" + query);
+    renderIncidents(incidents);
+    return incidents;
+}
+
+function renderIncidents(incidents) {
+    if (!incidentList) return;
+
+    if (!incidents || incidents.length === 0) {
+        incidentList.innerHTML =
+            '<div class="incident-empty">' +
+            '<div class="incident-empty-dot"></div>' +
+            '<strong>No incidents in this view</strong>' +
+            '<small>Use a demo control below to send a signal through the system.</small>' +
+            '</div>';
+        return;
+    }
+
+    incidentList.innerHTML = incidents.map(incidentHtml).join("");
+
+    // Wire the per-incident actions.
+    incidentList.querySelectorAll("[data-action]").forEach(button => {
+        button.addEventListener("click", async event => {
+            event.stopPropagation();
+            const id = button.getAttribute("data-id");
+            const action = button.getAttribute("data-action");
+            button.disabled = true;
+            button.textContent = "\u2026";
+            try {
+                await api(`/api/incidents/${id}/${action}`, { method: "POST" });
+                await refreshAll();
+            } catch (err) {
+                notify(err.message);
+                button.disabled = false;
+            }
+        });
+    });
+}
+
+function incidentHtml(i) {
+    const sev = (i.severity || "LOW").toLowerCase();
+    const status = i.status || "OPEN";
+    const open = status === "OPEN";
+    const acked = status === "ACKNOWLEDGED";
+
+    const actions = status === "RESOLVED" || status === "CLOSED"
+        ? '<span class="incident-status resolved-text">' + escapeHtml(status) + '</span>'
+        : '<span class="incident-actions">' +
+              (open ? `<button data-action="acknowledge" data-id="${i.incidentId}">Ack</button>` : "") +
+              `<button data-action="resolve" data-id="${i.incidentId}">Resolve</button>` +
+          '</span>';
+
+    const where = [i.cameraName, i.location].filter(Boolean).join(" \u00b7 ");
+    const when = i.occurredAt ? new Date(i.occurredAt).toLocaleString() : "";
+
+    return `
+        <div class="incident" data-severity="${sev}">
+            <span class="incident-indicator ${sev}"></span>
+            <div class="incident-content">
+                <div class="incident-meta">
+                    <span class="tag ${sev}-tag">${escapeHtml(i.severity)}</span>
+                    <span class="incident-id">#${i.incidentId}</span>
+                </div>
+                <strong>${escapeHtml(i.title)}</strong>
+                <small>${escapeHtml(where)}${when ? " \u00b7 " + escapeHtml(when) : ""}</small>
+            </div>
+            ${acked ? '<span class="incident-status high-text">ACK</span>' : ""}
+            ${actions}
+        </div>`;
+}
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+
+/* ----------------------------------------------------------- cameras ---- */
+
+async function loadCameras() {
+    const cameras = await api("/api/cameras");
+    if (!cameras) return;
+
+    // The sidebar renders assets as .camera-item rows inside the
+    // "MONITORED ASSETS" nav group. Keep that group's label, replace the rows.
+    // Classes must match the stylesheet: .camera-item / .status-dot / .camera-live
+    let group = null;
+    document.querySelectorAll(".nav-group").forEach(g => {
+        const label = g.querySelector(".nav-label");
+        if (label && label.textContent.trim().toUpperCase().includes("MONITORED")) group = g;
+    });
+    if (!group) return;
+
+    const rows = cameras.map(c => {
+        const live = c.cameraStatus === "ONLINE";
+        return `
+            <div class="camera-item">
+                <span class="status-dot${live ? "" : " offline"}"></span>
+                <span>${escapeHtml(c.location || c.cameraName)}</span>
+                <span class="camera-live">${escapeHtml(live ? "LIVE" : c.cameraStatus)}</span>
+            </div>`;
+    }).join("");
+
+    const label = group.querySelector(".nav-label");
+    group.innerHTML = (label ? label.outerHTML : "") + rows;
+}
+
+
+/* --------------------------------------------------- refresh + control -- */
+
+async function refreshAll() {
+    try {
+        await Promise.all([loadStats(), loadIncidents(), loadCameras()]);
+    } catch (err) {
+        if (err.message !== "unauthorized") notify("Refresh failed: " + err.message);
+    }
+}
+
+function startRefresh() {
+    stopRefresh();
+    refreshTimer = setInterval(refreshAll, REFRESH_MS);
+}
+
+function stopRefresh() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+    }
+}
+
+
+/* ------------------------------------------------------- demo controls -- */
+
+function notify(message) {
+    const el = document.createElement("div");
+    el.className = "notification";
+    el.innerHTML = '<span class="notification-dot"></span>' + escapeHtml(message);
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add("visible"), 20);
+    setTimeout(() => {
+        el.classList.remove("visible");
+        setTimeout(() => el.remove(), 300);
+    }, 3200);
+}
+
+
+
+/* ------------------------------------------------------- demo controls -- */
+
+async function injectDemo(kind) {
+    // Exercises the same endpoint the AI engine will call
+    // (POST /api/incidents/ingest, MoSCoW M-05).
+    const threat = kind === "THREAT";
+    let cameraId = null;
+    try {
+        const cameras = await api("/api/cameras");
+        if (cameras && cameras.length) cameraId = cameras[0].cameraId;
+    } catch (_) { /* reported below */ }
+
+    if (cameraId === null) {
+        notify("No camera registered \u2014 run the seed migration first.");
+        return;
+    }
+
+    const payload = threat
+        ? { cameraId, title: "Weapon detected", detectedObject: "weapon",
+            confidence: 96.5, description: "Demo signal injected from the cockpit." }
+        : { cameraId, title: "Fall detected", detectedObject: "fall",
+            confidence: 88.0, description: "Demo signal injected from the cockpit." };
+
+    try {
+        const created = await api("/api/incidents/ingest", {
+            method: "POST", body: JSON.stringify(payload)
+        });
+        notify(created.severity + " incident #" + created.incidentId + " raised.");
+        await refreshAll();
+    } catch (err) {
+        if (err.message !== "unauthorized") notify("Ingest failed: " + err.message);
+    }
+}
+
+const healthButton = document.getElementById("healthButton");
+if (healthButton) healthButton.addEventListener("click", () => injectDemo("HEALTH"));
+
+const threatButton = document.getElementById("threatButton");
+if (threatButton) threatButton.addEventListener("click", () => injectDemo("THREAT"));
+
+
+/* -------------------------------------------------------------- filters -- */
+
+document.querySelectorAll(".filter").forEach(button => {
+    button.addEventListener("click", () => {
+        document.querySelectorAll(".filter").forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+        const label = button.textContent.trim().toUpperCase();
+        activeFilter = ["CRITICAL", "HIGH", "MEDIUM"].includes(label) ? label : "ALL";
+        loadIncidents().catch(err => {
+            if (err.message !== "unauthorized") notify(err.message);
+        });
+    });
+});
+
+
+/* ----------------------------------------------------------- navigation -- */
+
+document.querySelectorAll(".nav-item").forEach(item => {
+    item.addEventListener("click", () => {
+        document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+        item.classList.add("active");
+    });
+});
+
+
+/* --------------------------------------------------------- theme toggle -- */
+
+const themeToggle = document.getElementById("themeToggle");
+if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+        localStorage.setItem("cypher-theme",
+            document.body.classList.contains("dark") ? "dark" : "light");
+    });
+}
+if (localStorage.getItem("cypher-theme") === "dark") {
+    document.body.classList.add("dark");
+}
+
+
+/* ---------------------------------------------------------- refresh btn -- */
+
+const refreshButton = document.getElementById("refreshButton");
+if (refreshButton) {
+    refreshButton.addEventListener("click", () => {
+        refreshButton.classList.add("spinning");
+        refreshAll().finally(() =>
+            setTimeout(() => refreshButton.classList.remove("spinning"), 650));
+    });
+}
+
+
+/* ----------------------------------------------------------------- boot -- */
+
+(async function boot() {
+    if (!getToken()) {
+        showAuthOverlay("");
+        return;
+    }
+    hideAuthOverlay();
+    await refreshAll();
+    startRefresh();
+})();
+
+</script>
+</body>
+</html>

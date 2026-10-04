@@ -41,8 +41,16 @@ public class SecurityConfig {
                         // the real status and message.
                         .requestMatchers("/error").permitAll()
 
+                        // Public: the operator cockpit and its assets. These are
+                        // static files; the data they display still comes from
+                        // /api/**, which requires a token.
+                        .requestMatchers(HttpMethod.GET,
+                                "/", "/index.html", "/styles.css",
+                                "/favicon.ico", "/manifest.json",
+                                "/*.js", "/*.css", "/*.png", "/*.svg").permitAll()
+
                         // Public: liveness probe.
-                        .requestMatchers(HttpMethod.GET, "/").permitAll()
+                        .requestMatchers("/health").permitAll()
 
                         // Everything else needs a valid bearer token.
                         .anyRequest().authenticated())

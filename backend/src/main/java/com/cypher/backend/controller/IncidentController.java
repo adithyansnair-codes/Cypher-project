@@ -1,11 +1,13 @@
 package com.cypher.backend.controller;
 
+import com.cypher.backend.dto.request.IncidentIngestRequest;
 import com.cypher.backend.dto.response.DashboardStatsResponse;
 import com.cypher.backend.dto.response.IncidentResponse;
 import com.cypher.backend.entity.Camera;
 import com.cypher.backend.repository.CameraRepository;
 import com.cypher.backend.repository.UserRepository;
 import com.cypher.backend.service.IncidentService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -54,6 +56,27 @@ public class IncidentController {
         return incidentService.get(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Detection ingest -- the AI engine's entry point (MoSCoW M-05).
+     *
+     * <p>When {@code severity} is omitted the gateway derives it from the
+     * detected object and confidence, so the detector never invents its own
+     * priority vocabulary.
+     *
+     * <p>Requires a bearer token today; the AI service will authenticate with a
+     * service account.
+     */
+    @PostMapping("/incidents/ingest")
+    public ResponseEntity<?> ingest(@Valid @RequestBody IncidentIngestRequest request,
+                                    Authentication auth) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(incidentService.ingest(request, operatorId(auth)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /** OPEN -> ACKNOWLEDGED. Assigns the incident to the calling operator. */
