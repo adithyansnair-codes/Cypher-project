@@ -73,7 +73,10 @@ detect_super() {
     SUPER_MODE="sudo"
     return
   fi
-  if PGPASSWORD="${PGPASSWORD:-}" psql -tAc "SELECT 1" \
+  # TCP is only usable if a superuser password is actually available. Without
+  # one, psql would stop and prompt -- so skip it rather than appear to hang.
+  if [[ -n "${PGPASSWORD:-}" ]] \
+     && PGPASSWORD="$PGPASSWORD" psql -tAc "SELECT 1" \
        -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" -d postgres \
        >/dev/null 2>&1; then
     SUPER_MODE="tcp"
@@ -89,6 +92,19 @@ as_super() {
     tcp)    PGPASSWORD="${PGPASSWORD:-}" psql -v ON_ERROR_STOP=1 -q \
               -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" \
               -d postgres -c "$1" ;;
+    *)      echo "internal error: superuser mode not detected" >&2; exit 1 ;;
+  esac
+}
+
+# Same connection, but returns the value instead of discarding it. Used for the
+# post-drop verification; running that over raw TCP while the rest of the script
+# uses sudo is what caused a stray "Password for user postgres:" prompt.
+as_super_scalar() {
+  case "$SUPER_MODE" in
+    direct) psql -tAc "$1" ;;
+    sudo)   sudo -n -u postgres psql -tAc "$1" ;;
+    tcp)    PGPASSWORD="${PGPASSWORD:-}" psql -tAc "$1" \
+              -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" -d postgres ;;
     *)      echo "internal error: superuser mode not detected" >&2; exit 1 ;;
   esac
 }
@@ -150,9 +166,7 @@ echo "==> dropping and recreating '${DB_NAME}' (clean start)"
 as_super "DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE)"
 
 # Verify the drop actually happened rather than assuming it did.
-REMAINS=$(PGPASSWORD="${PGPASSWORD:-}" psql -tAc \
-  "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" \
-  -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" -d postgres 2>/dev/null || true)
+REMAINS=$(as_super_scalar "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" 2>/dev/null || true)
 if [[ -n "${REMAINS// /}" ]]; then
   echo "ERROR: could not drop '${DB_NAME}' -- it still exists." >&2
   echo "  Stop anything connected (the Spring Boot app, open psql sessions), then re-run." >&2
