@@ -2,11 +2,16 @@ package com.cypher.backend.controller;
 
 import com.cypher.backend.entity.User;
 import com.cypher.backend.service.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * User administration. Requires a bearer token: {@code SecurityConfig} permits
+ * only {@code /auth/**} anonymously.
+ */
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -23,12 +28,9 @@ public class UserController {
     }
 
     @GetMapping("/email/{email}")
-    public Optional<User> getUserByEmail(@PathVariable String email) {
-        return userService.getUserByEmail(email);
-    }
-
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.saveUser(user);
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+        Optional<User> user = userService.getUserByEmail(email);
+        return user.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
