@@ -48,22 +48,75 @@ fi
 
 echo "==> target: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Run a statement as the local postgres superuser (peer auth), which is how a
-# fresh Ubuntu install is configured.
-as_super() {
+# ---------------------------------------------------------------------------
+# How to reach a superuser.
+#
+# Ubuntu ships PostgreSQL with peer authentication, so `sudo -u postgres psql`
+# just works. macOS/homebrew and managed databases have no such user, so we fall
+# back to TCP as PGUSER/PGPASSWORD.
+#
+# The earlier version probed with `sudo -n -u postgres true`. On Ubuntu the
+# postgres *role* has no password and `sudo -n` can be refused, so the probe
+# failed and the script silently fell through to TCP -- where psql then stops and
+# asks "Password for user postgres:", which looks like a hang. Probe with the
+# actual command instead of a proxy for it.
+# ---------------------------------------------------------------------------
+SUPER_MODE=""
+
+detect_super() {
   if [[ "$(id -un)" == "postgres" ]]; then
-    psql -v ON_ERROR_STOP=1 -q -c "$1"
+    SUPER_MODE="direct"
     return
   fi
-  if command -v sudo >/dev/null 2>&1 && sudo -n -u postgres true 2>/dev/null; then
-    sudo -u postgres psql -v ON_ERROR_STOP=1 -q -c "$1"
+  if command -v sudo >/dev/null 2>&1 \
+     && sudo -n -u postgres psql -tAc "SELECT 1" >/dev/null 2>&1; then
+    SUPER_MODE="sudo"
     return
   fi
-  # Fall back to TCP: macOS/homebrew, or a managed database with no peer auth.
-  # Set PGUSER / PGPASSWORD for the superuser if they differ from the defaults.
-  PGPASSWORD="${PGPASSWORD:-}" psql -v ON_ERROR_STOP=1 -q \
-    -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" -d postgres -c "$1"
+  if PGPASSWORD="${PGPASSWORD:-}" psql -tAc "SELECT 1" \
+       -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" -d postgres \
+       >/dev/null 2>&1; then
+    SUPER_MODE="tcp"
+    return
+  fi
+  SUPER_MODE=""
 }
+
+as_super() {
+  case "$SUPER_MODE" in
+    direct) psql -v ON_ERROR_STOP=1 -q -c "$1" ;;
+    sudo)   sudo -n -u postgres psql -v ON_ERROR_STOP=1 -q -c "$1" ;;
+    tcp)    PGPASSWORD="${PGPASSWORD:-}" psql -v ON_ERROR_STOP=1 -q \
+              -h "$DB_HOST" -p "$DB_PORT" -U "${PGUSER:-postgres}" \
+              -d postgres -c "$1" ;;
+    *)      echo "internal error: superuser mode not detected" >&2; exit 1 ;;
+  esac
+}
+
+detect_super
+
+if [[ -z "$SUPER_MODE" ]]; then
+  cat >&2 <<EOF
+ERROR: cannot reach PostgreSQL as a superuser.
+
+Tried:
+  1. connecting as the local 'postgres' system user
+  2. sudo -n -u postgres psql        (needs passwordless sudo)
+  3. TCP to ${DB_HOST}:${DB_PORT} as ${PGUSER:-postgres}
+
+Fix on Ubuntu/Debian (the usual case):
+  sudo -u postgres psql -c "ALTER ROLE ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
+  -- then either grant passwordless sudo for your user, or create the database
+     by hand and run:  cd backend && ./mvnw spring-boot:run
+
+Fix on macOS/homebrew or a managed database: export the superuser credentials
+first, then re-run:
+  export PGUSER=postgres PGPASSWORD='<superuser password>'
+EOF
+  exit 1
+fi
+
+echo "==> superuser access: ${SUPER_MODE}"
 
 echo "==> ensuring role '${DB_USER}' exists"
 as_super "DO \$\$ BEGIN
