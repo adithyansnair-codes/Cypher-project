@@ -142,8 +142,8 @@
 
             <div class="header-title">
 
-                <div class="eyebrow">
-                    WEDNESDAY · 19 JUL 2026
+                <div class="eyebrow" id="todayLabel">
+                    &nbsp;
                 </div>
 
                 <h1>
@@ -1091,6 +1091,7 @@ async function loadCameras() {
 async function refreshAll() {
     try {
         await Promise.all([loadStats(), loadIncidents(), loadCameras()]);
+        renderSyncedAt();
     } catch (err) {
         if (err.message !== "unauthorized") notify("Refresh failed: " + err.message);
     }
@@ -1220,7 +1221,31 @@ if (refreshButton) {
 
 /* ----------------------------------------------------------------- boot -- */
 
+/* The header date was hardcoded in the original design. Render the real one. */
+function renderToday() {
+    const el = document.getElementById("todayLabel");
+    if (!el) return;
+    const now = new Date();
+    const weekday = now.toLocaleDateString("en-GB", { weekday: "long" }).toUpperCase();
+    const rest = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+    el.textContent = weekday + " \u00b7 " + rest;
+}
+
+/* The footer says "GATEWAY SYNCED <time>" -- make it the real sync time. */
+function renderSyncedAt() {
+    document.querySelectorAll("footer, .footer").forEach(f => {
+        const m = f.textContent.match(/GATEWAY SYNCED[^\n]*/i);
+        if (m) {
+            const t = new Date().toLocaleTimeString("en-GB", { hour12: false });
+            f.textContent = f.textContent.replace(/GATEWAY SYNCED[^\n]*/i,
+                "GATEWAY SYNCED " + t + " UTC");
+        }
+    });
+}
+
 (async function boot() {
+    renderToday();
+    renderSyncedAt();
     if (!getToken()) {
         showAuthOverlay("");
         return;
