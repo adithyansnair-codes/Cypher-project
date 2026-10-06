@@ -44,6 +44,13 @@ public class IncidentService {
     public static final String SEVERITY_CRITICAL = "CRITICAL";
     public static final String SEVERITY_HIGH = "HIGH";
 
+    /**
+     * Objects that are CRITICAL regardless of how confident the detector was.
+     * Keep this in step with the labels the AI engine can emit.
+     */
+    public static final java.util.Set<String> CRITICAL_OBJECTS = java.util.Set.of(
+            "weapon", "gun", "pistol", "rifle", "knife", "fire");
+
     private final IncidentRepository incidentRepository;
     private final CameraRepository cameraRepository;
     private final AlertRepository alertRepository;
@@ -197,8 +204,12 @@ public class IncidentService {
         String object = detectedObject == null ? "" : detectedObject.trim().toLowerCase();
         double c = confidence == null ? 0d : confidence;
 
-        if (object.equals("weapon") || object.equals("fire") || object.equals("gun")
-                || object.equals("knife")) {
+        // Lethal or life-threatening objects are CRITICAL whatever the confidence.
+        // "pistol" and "rifle" were missing here, so a pistol detected at 38%
+        // confidence was graded LOW -- the opposite of the intended behaviour.
+        // The trained detector's classes are exactly knife and pistol, so this
+        // omission would have mis-graded most real detections.
+        if (CRITICAL_OBJECTS.contains(object)) {
             return SEVERITY_CRITICAL;
         }
         if (object.equals("smoke") || object.equals("fall")) {
