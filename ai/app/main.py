@@ -15,6 +15,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -46,6 +47,20 @@ gateway = GatewayClient()
 
 # camera_id -> label -> last time an incident was raised for it
 _last_raised: dict[tuple[int, str], float] = defaultdict(float)
+
+# (camera_id, label) -> how many frames in a row have shown it.
+#
+# WHY: a single frame is not evidence. In a 45-second webcam run the model
+# scored "pistol" on 1282 frames at 35-55% confidence when no pistol was
+# present, and one of those frames was enough to raise a CRITICAL incident.
+# A real object is seen consistently; sensor noise and a familiar shape are
+# not. Requiring the same label across several frames removes most of it.
+_streak: dict[tuple[int, str], int] = defaultdict(int)
+
+# Frames in a row a label must appear before it is reported. At ~27 fps this is
+# roughly a third of a second -- short enough that an operator does not notice,
+# long enough to reject a one-frame false positive.
+CONFIRM_FRAMES = int(os.getenv("CONFIRM_FRAMES", "8"))
 
 
 @app.on_event("startup")
@@ -116,7 +131,11 @@ async def monitor_frame(
 
     for label, det in best.items():
         cid = camera_id or gateway.default_camera_id()
+        _streak[(cid, label)] += 1
 
+        if _streak[(cid, label)] < CONFIRM_FRAMES:
+            skipped.append(f"{label} (needs {CONFIRM_FRAMES} frames, has {_streak[(cid, label)]})")
+            continue
         if _on_cooldown(cid, label):
             skipped.append(f"{label} (cooldown)")
             continue
@@ -174,6 +193,8 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
     frames = 0
     raised = 0
     seen: dict[str, int] = defaultdict(int)
+    reported: set[str] = set()
+    cid = camera_id or gateway.default_camera_id()
 
     try:
         while (time.time() - started) < max_seconds:
@@ -181,21 +202,41 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
             if not ok:
                 break
             frames += 1
-            for det in detector.detect(frame):
-                label = str(det["label"]).lower()
+
+            detections = detector.detect(frame)
+            labels_this_frame = {str(d["label"]).lower() for d in detections}
+            best_this_frame: dict[str, float] = {}
+            for d in detections:
+                label = str(d["label"]).lower()
                 seen[label] += 1
-                cid = camera_id or gateway.default_camera_id()
+                best_this_frame[label] = max(
+                    best_this_frame.get(label, 0.0), float(d["confidence"])
+                )
+
+            # advance the streak for labels present, reset it for those absent
+            for label in list(_streak):
+                if label[0] == cid and label[1] not in labels_this_frame:
+                    _streak[label] = 0
+            for label in labels_this_frame:
+                _streak[(cid, label)] += 1
+
+            for label, confidence in best_this_frame.items():
                 if not _is_reportable(label) or _on_cooldown(cid, label):
+                    continue
+                if _streak[(cid, label)] < CONFIRM_FRAMES:
+                    continue  # seen too briefly to trust
+                if label in reported:
                     continue
                 try:
                     gateway.report_incident(
                         title=f"{label.capitalize()} detected",
                         detected_object=label,
-                        confidence=det["confidence"],
+                        confidence=confidence,
                         description=f"{label} detected in a video stream.",
                         camera_id=cid,
                     )
                     _last_raised[(cid, label)] = time.time()
+                    reported.add(label)
                     raised += 1
                 except Exception as exc:  # noqa: BLE001
                     log.error("report failed: %s", exc)
@@ -206,6 +247,8 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
         "frames_processed": frames,
         "seconds": round(time.time() - started, 1),
         "objects_seen": dict(seen),
+        "confirmed": sorted(reported),
+        "confirmation_frames": CONFIRM_FRAMES,
         "incidents_raised": raised,
     }
 

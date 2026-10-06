@@ -180,6 +180,9 @@ print()
 result = ai_main.monitor_stream(source="0", max_seconds=45)
 print(f"\n  frames processed : {result['frames_processed']}")
 print(f"  objects seen     : {result['objects_seen'] or 'nothing'}")
+print(f"  confirmed        : {result.get('confirmed') or 'nothing held long enough'}")
+print(f"  confirmation     : a label must appear in {result.get('confirmation_frames', 8)} "
+      f"consecutive frames")
 print(f"  incidents raised : {result['incidents_raised']}")
 if result['incidents_raised'] == 0:
     print("\n  No weapon detected. This is expected sometimes -- knife recall is 0.345.")
