@@ -165,10 +165,19 @@ else
     "$PY" - <<'PYEOF'
 import sys
 sys.path.insert(0, '.')
-from ai.app.main import detector, monitor_stream
+# Construct the detector directly. Importing it from ai.app.main returns None,
+# because main.py only builds it inside FastAPI's startup hook -- which never
+# runs when the module is imported rather than served. That is what broke the
+# camera path with "NoneType has no attribute detect".
+from ai.app import main as ai_main
+from ai.app.detector import Detector
+
 print("  loading model...")
+ai_main.detector = Detector()
+print(f"  weights: {ai_main.detector.weights}")
+print(f"  classes: {list(ai_main.detector.classes.values())}")
 print()
-result = monitor_stream(source="0", max_seconds=45)
+result = ai_main.monitor_stream(source="0", max_seconds=45)
 print(f"\n  frames processed : {result['frames_processed']}")
 print(f"  objects seen     : {result['objects_seen'] or 'nothing'}")
 print(f"  incidents raised : {result['incidents_raised']}")
