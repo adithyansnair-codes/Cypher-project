@@ -4,7 +4,34 @@
 Prints a verdict instead of a traceback so the demo never fails cryptically.
 """
 import sys, time, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, ".."))
+
+# The ML packages live in a virtualenv, not system python. If cv2 is missing,
+# re-run ourselves under a known interpreter rather than failing with a bare
+# ModuleNotFoundError that says nothing about what to do.
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:
+    CANDIDATES = [
+        os.path.join(HERE, "..", ".venv", "bin", "python"),
+        os.path.join(HERE, "..", ".dsh-scratch", "ml", "bin", "python"),
+        "/Users/adithyansnair/CYPHER/.dsh-scratch/ml/bin/python",
+    ]
+    for candidate in CANDIDATES:
+        candidate = os.path.abspath(candidate)
+        if os.path.exists(candidate):
+            os.execv(candidate, [candidate, os.path.abspath(__file__), *sys.argv[1:]])
+    print("FAIL  opencv is not installed for this python.")
+    print(f"      interpreter: {sys.executable}")
+    print()
+    print("      Use the project virtualenv instead:")
+    print("          .venv/bin/python ai/check-camera.py")
+    print("      or create one:")
+    print("          python3 -m venv .venv")
+    print("          .venv/bin/pip install -r ai/requirements.txt")
+    raise SystemExit(1)
 
 import cv2
 
