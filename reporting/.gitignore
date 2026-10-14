@@ -1,0 +1,4 @@
+# Build output — never commit published binaries.
+bin/
+obj/
+publish/
