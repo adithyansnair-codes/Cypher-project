@@ -8,10 +8,13 @@ import com.cypher.backend.entity.Incident;
 import com.cypher.backend.repository.AlertRepository;
 import com.cypher.backend.repository.CameraRepository;
 import com.cypher.backend.repository.IncidentRepository;
+import com.cypher.backend.websocket.IncidentSocketHandler;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -54,16 +57,19 @@ public class IncidentService {
     private final IncidentRepository incidentRepository;
     private final CameraRepository cameraRepository;
     private final AlertRepository alertRepository;
+    private final IncidentSocketHandler socketHandler;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public IncidentService(IncidentRepository incidentRepository,
                            CameraRepository cameraRepository,
-                           AlertRepository alertRepository) {
+                           AlertRepository alertRepository,
+                           IncidentSocketHandler socketHandler) {
         this.incidentRepository = incidentRepository;
         this.cameraRepository = cameraRepository;
         this.alertRepository = alertRepository;
+        this.socketHandler = socketHandler;
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +104,9 @@ public class IncidentService {
         if (operatorId != null) {
             incident.setAssignedTo(operatorId);
         }
-        return enrich(List.of(incidentRepository.save(incident))).get(0);
+        IncidentResponse response = enrich(List.of(incidentRepository.save(incident))).get(0);
+        publishAfterCommit("incident.updated", response);
+        return response;
     }
 
     /**
@@ -123,7 +131,9 @@ public class IncidentService {
         if (operatorId != null) {
             incident.setAssignedTo(operatorId);
         }
-        return enrich(List.of(incidentRepository.save(incident))).get(0);
+        IncidentResponse response = enrich(List.of(incidentRepository.save(incident))).get(0);
+        publishAfterCommit("incident.updated", response);
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -192,7 +202,9 @@ public class IncidentService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Incident was created but could not be read back"));
 
-        return enrich(List.of(saved)).get(0);
+        IncidentResponse response = enrich(List.of(saved)).get(0);
+        publishAfterCommit("incident.created", response);
+        return response;
     }
 
     /**
@@ -221,6 +233,24 @@ public class IncidentService {
     }
 
     // ------------------------------------------------------------------------
+
+    /**
+     * Pushes an event to every connected cockpit, but only once the
+     * transaction has actually committed: broadcasting from inside it would
+     * announce a change that could still roll back (MoSCoW M-03).
+     */
+    private void publishAfterCommit(String type, IncidentResponse incident) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.broadcast(type, incident);
+                }
+            });
+        } else {
+            socketHandler.broadcast(type, incident);
+        }
+    }
 
     /** Joins camera context onto each incident with one query, not N. */
     private List<IncidentResponse> enrich(List<Incident> incidents) {

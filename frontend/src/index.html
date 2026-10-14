@@ -846,9 +846,12 @@
    paths below cannot escape to the proxy root and come back as 405. */
 const API = new URL(".", document.baseURI).pathname.replace(/\/$/, "");
 const TOKEN_KEY = "cypher-token";
-const REFRESH_MS = 15000;                        // poll cadence until WebSockets land
+const REFRESH_MS = 15000;                        // fallback cadence, not the default
 
 let refreshTimer = null;
+let socket = null;                               // live incident channel
+let socketAttempts = 0;
+let socketGaveUp = false;
 
 
 /* ---------------------------------------------------------- token store -- */
@@ -879,6 +882,8 @@ async function api(path, options = {}) {
 
     if (response.status === 401) {
         clearToken();
+        disconnectSocket();
+        stopRefresh();
         showAuthOverlay("Session expired. Please sign in again.");
         throw new Error("unauthorized");
     }
@@ -934,7 +939,7 @@ if (authForm) {
             document.getElementById("authPassword").value = "";
             hideAuthOverlay();
             await refreshAll();
-            startRefresh();
+            connectSocket();
         } catch (err) {
             authError.textContent = err.message === "unauthorized"
                 ? "Invalid email or password."
@@ -950,6 +955,7 @@ const logoutButton = document.getElementById("logoutButton");
 if (logoutButton) {
     logoutButton.addEventListener("click", () => {
         clearToken();
+        disconnectSocket();
         stopRefresh();
         showAuthOverlay("Signed out.");
     });
@@ -1113,6 +1119,91 @@ function stopRefresh() {
     }
 }
 
+/* ------------------------------------------------------- live channel -- */
+
+/* Push, not polling (MoSCoW M-03): the gateway broadcasts incident.created and
+   incident.updated over /ws/incidents, so the screen changes the moment
+   something happens. If the socket cannot be established, the cockpit falls
+   back to the 15 s poll so an operator is never left with a stale screen. */
+
+function socketUrl() {
+    const scheme = location.protocol === "https:" ? "wss" : "ws";
+    return scheme + "://" + location.host + API + "/ws/incidents?token=" +
+        encodeURIComponent(getToken() || "");
+}
+
+function setConnection(state, label) {
+    const el = document.querySelector(".connection");
+    if (!el) return;
+    const dot = el.querySelector(".status-dot") || document.createElement("span");
+    dot.className = "status-dot" + (state === "live" ? "" : " " + state);
+    el.textContent = "";
+    el.appendChild(dot);
+    el.appendChild(document.createTextNode(" " + label));
+}
+
+function connectSocket() {
+    if (socketGaveUp || !getToken() || socket) return;
+    try {
+        socket = new WebSocket(socketUrl());
+    } catch (_) {
+        socket = null;
+        fallbackToPolling("Polling (no live channel)");
+        return;
+    }
+
+    socket.onopen = () => {
+        socketAttempts = 0;
+        setConnection("live", "Realtime connected");
+        stopRefresh();                  // push has taken over
+        refreshAll();                   // resync anything missed while away
+    };
+
+    socket.onmessage = event => {
+        let payload;
+        try { payload = JSON.parse(event.data); } catch (_) { return; }
+        if (!payload || !payload.incident) return;
+
+        if (payload.type === "incident.created") {
+            const i = payload.incident;
+            notify((i.severity || "NEW") + " incident #" + i.incidentId + " \u00b7 " + i.title);
+        }
+        if (payload.type === "incident.created" || payload.type === "incident.updated") {
+            refreshAll();
+        }
+    };
+
+    socket.onclose = () => {
+        socket = null;
+        if (!getToken() || socketGaveUp) return;
+        socketAttempts += 1;
+        if (socketAttempts > 5) {
+            fallbackToPolling("Polling (live channel down)");
+            return;
+        }
+        setConnection("pending", "Reconnecting\u2026");
+        setTimeout(connectSocket, Math.min(1000 * Math.pow(2, socketAttempts), 15000));
+    };
+
+    socket.onerror = () => { /* onclose follows and drives the retry */ };
+}
+
+function fallbackToPolling(label) {
+    socketGaveUp = true;
+    setConnection("offline", label);
+    startRefresh();
+}
+
+function disconnectSocket() {
+    socketGaveUp = false;
+    socketAttempts = 0;
+    if (socket) {
+        const open = socket;
+        socket = null;
+        open.close();
+    }
+}
+
 
 /* ------------------------------------------------------- demo controls -- */
 
@@ -1256,7 +1347,7 @@ function renderSyncedAt() {
     }
     hideAuthOverlay();
     await refreshAll();
-    startRefresh();
+    connectSocket();
 })();
 
 </script>

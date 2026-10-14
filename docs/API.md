@@ -105,6 +105,49 @@ incident's alerts to `CLOSED`. This is MoSCoW requirement **M-08**.
 | `404` | no such incident |
 | `409` | already resolved |
 
+### `POST /api/incidents/ingest` — the AI engine's entry point (MoSCoW M-05)
+
+```json
+{ "cameraId": 2, "title": "Knife detected", "detectedObject": "knife", "confidence": 91.4 }
+```
+
+`201` returns the created incident. When `severity` is omitted the **gateway**
+derives it from `detectedObject` and `confidence` — weapons and fire are
+CRITICAL whatever the confidence — so a new detector cannot invent its own
+priority vocabulary. `400` on an unknown camera.
+
+---
+
+## Live events (WebSocket) — MoSCoW M-03
+
+The cockpit does not poll for incident changes: it keeps a socket open and the
+gateway pushes every change to all connected operators.
+
+```
+ws://<host>:8081/ws/incidents?token=<jwt>
+```
+
+| | |
+|---|---|
+| Path | `/ws/incidents` |
+| Auth | JWT in the `token` query parameter — the browser WebSocket API cannot set an `Authorization` header, so the handshake itself is validated (signature + expiry) and refused without a valid token |
+| Origin | Same-origin by default; a deployment behind a path-prefixed proxy (code-server's `/proxy/8081/`) sets `WS_ALLOWED_ORIGINS` to its public origin(s) |
+| Reconnect | The client retries with backoff (1 s → 15 s, up to five attempts), then falls back to polling `GET /api/incidents` every 15 s, so the screen is never stale |
+
+One JSON object per event:
+
+```json
+{ "type": "incident.created", "incident": { "incidentId": 3, "severity": "CRITICAL", "...": "same shape as GET /api/incidents" } }
+```
+
+| `type` | Sent when |
+|---|---|
+| `incident.created` | the AI engine (or a cockpit demo control) ingests a detection |
+| `incident.updated` | an operator acknowledges or resolves an incident |
+
+Events are emitted **after** the database transaction commits, so a change that
+rolls back is never announced.
+
 ---
 
 ## Dashboard and assets
@@ -172,8 +215,6 @@ so an invalid value is rejected by the database rather than silently stored.
 
 | Endpoint | For |
 |---|---|
-| `POST /api/incidents/ingest` | the AI engine to submit a detection |
 | `GET /api/incidents/{id}/alerts` | alert history per incident |
 | `GET /api/reports/*` | CSV / Excel / PDF export (needs the C# worker) |
-| WebSocket channel | live push to the cockpit (MoSCoW M-03) |
 | Project and camera administration | MoSCoW S-07 |

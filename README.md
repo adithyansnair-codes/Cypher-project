@@ -57,6 +57,8 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - JWT Authentication
 - PostgreSQL Database
 - REST APIs
+- Incident dashboard with acknowledge / resolve workflow
+- Live incident push over WebSocket (MoSCoW M-03)
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 

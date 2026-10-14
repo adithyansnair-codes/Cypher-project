@@ -2650,4 +2650,6 @@ footer b {
 
 .status-dot.offline { background: var(--text-tertiary); opacity: .5; }
 
+.status-dot.pending { background: var(--yellow); opacity: 1; }
+
 .resolved-text { color: var(--green); }

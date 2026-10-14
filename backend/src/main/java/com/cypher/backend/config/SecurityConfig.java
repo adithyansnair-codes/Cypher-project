@@ -52,6 +52,12 @@ public class SecurityConfig {
                         // Public: liveness probe.
                         .requestMatchers("/health").permitAll()
 
+                        // Public at the HTTP layer: the WebSocket handshake is
+                        // authenticated by JwtHandshakeInterceptor instead,
+                        // because a browser cannot set an Authorization header
+                        // on it (MoSCoW M-03).
+                        .requestMatchers("/ws/**").permitAll()
+
                         // Everything else needs a valid bearer token.
                         .anyRequest().authenticated())
 
