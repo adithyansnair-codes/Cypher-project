@@ -22,6 +22,9 @@
 
 <body>
 
+<!-- Visible only under 900px, where the sidebar is hidden. -->
+<button class="nav-toggle" id="navToggle" type="button" aria-label="Menu">☰</button>
+
 <div class="app">
 
     <!-- =========================================================
@@ -1796,6 +1799,7 @@ document.querySelectorAll(".filter").forEach(button => {
 document.querySelectorAll(".nav-item").forEach(item => {
     item.addEventListener("click", () => {
         const view = item.getAttribute("data-view");
+        document.body.classList.remove("nav-open");
         showView(view || "live");
 
         if (view === "audit") {
@@ -1810,6 +1814,11 @@ document.querySelectorAll(".nav-item").forEach(item => {
 
 
 /* --------------------------------------------------------- theme toggle -- */
+
+const navToggle = document.getElementById("navToggle");
+if (navToggle) {
+    navToggle.addEventListener("click", () => document.body.classList.toggle("nav-open"));
+}
 
 const themeToggle = document.getElementById("themeToggle");
 if (themeToggle) {

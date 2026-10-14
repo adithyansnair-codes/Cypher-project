@@ -2530,6 +2530,37 @@ footer b {
     .audit-overlay { left: 0; }
 }
 
+/* Mobile navigation: under 900px the sidebar is hidden behind a floating button
+   (bottom-left, so it cannot collide with the header). */
+.nav-toggle { display: none; }
+
+@media (max-width: 900px) {
+    .nav-toggle {
+        display: flex;
+        position: fixed;
+        bottom: 18px;
+        left: 14px;
+        z-index: 960;
+        width: 42px;
+        height: 42px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-strong);
+        border-radius: 12px;
+        background: var(--surface-solid);
+        color: var(--text);
+        font-size: 17px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(20, 30, 40, .18);
+    }
+
+    body.nav-open .sidebar {
+        display: flex;
+        z-index: 960;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+    }
+}
+
 .audit-panel {
     width: min(980px, 100%);
     padding: 26px 28px 30px;
