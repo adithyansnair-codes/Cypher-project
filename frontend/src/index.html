@@ -840,7 +840,11 @@
    token is discarded and the sign-in overlay reappears.
    ========================================================= */
 
-const API = "";                                  // same origin as the page
+/* The cockpit can be served straight from the gateway (http://host:8081/) or
+   through a path-prefixed proxy -- code-server serves it at /proxy/8081/.
+   Resolve API calls against the document's own directory, so the absolute
+   paths below cannot escape to the proxy root and come back as 405. */
+const API = new URL(".", document.baseURI).pathname.replace(/\/$/, "");
 const TOKEN_KEY = "cypher-token";
 const REFRESH_MS = 15000;                        // poll cadence until WebSockets land
 
