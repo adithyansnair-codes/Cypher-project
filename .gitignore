@@ -27,3 +27,31 @@ obj/
 
 # OS
 .DS_Store
+
+# ===== CYPHER generated/local files =====
+**/node_modules/
+**/dist/
+**/target/
+**/bin/
+**/obj/
+**/__pycache__/
+*.pyc
+
+# Local backups
+**/backups/
+*.backup-*
+*.bak
+
+# IDE / OS
+**/.vscode/
+.DS_Store
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.backup

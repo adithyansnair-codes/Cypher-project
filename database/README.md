@@ -2,7 +2,7 @@
 
 ## Database
 
-PostgreSQL 17
+MySQL 8.0+
 
 ## Files
 

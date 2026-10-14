@@ -1,28 +1,89 @@
-version: "3.8"
-
 services:
-
-  postgres:
-    image: postgres:17
-    container_name: cypher-db
+  mysql:
+    image: mysql:8.4
+    container_name: cypher-mysql
     restart: always
 
     environment:
-      POSTGRES_DB: cypher
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: cypher123
+      MYSQL_DATABASE: cypher
+      MYSQL_USER: cypher
+      MYSQL_PASSWORD: cypher123
+      MYSQL_ROOT_PASSWORD: root123
 
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./database/002_seed.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
+      - ./database/003_operational_schema.sql:/docker-entrypoint-initdb.d/003_operational_schema.sql:ro
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "cypher", "-pcypher123"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  gateway:
     ports:
-    - "5433:5432"
+      - "8090:8080"
+    build:
+      context: ./frontend/services/gateway
+    container_name: cypher-gateway
+    restart: always
 
-  backend:
+    environment:
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_API_KEY: ${SERVICE_API_KEY}
 
-    build: .
 
-    container_name: cypher-backend
+  ai-engine:
+    build:
+      context: ./frontend/services/ai-engine
+    container_name: cypher-ai-engine
+    restart: always
 
     depends_on:
-      - postgres
+      gateway:
+        condition: service_started
+
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      SERVICE_API_KEY: ${SERVICE_API_KEY}
+
+    ports:
+      - "5000:5000"
+
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: cypher-frontend
+    restart: always
+
+    depends_on:
+      gateway:
+        condition: service_started
+      ai-engine:
+        condition: service_started
+
+    ports:
+      - "80:80"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: cypher-backend
+    restart: always
+
+    depends_on:
+      mysql:
+        condition: service_healthy
 
     ports:
       - "8081:8081"
+
+
+volumes:
+  mysql_data:
