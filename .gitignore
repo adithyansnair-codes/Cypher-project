@@ -27,3 +27,11 @@ obj/
 
 # OS
 .DS_Store
+
+# Local/generated workspace files
+**/node_modules/
+**/dist/
+**/backups/
+*.backup
+*.backup-*
+*.tsbuildinfo
