@@ -68,6 +68,11 @@
                     <span>Camera network</span>
                 </button>
 
+                <button class="nav-item" data-view="algorithms">
+                    <span class="nav-icon">⌗</span>
+                    <span>Algorithms</span>
+                </button>
+
                 <button class="nav-item" data-view="audit">
                     <span class="nav-icon">▤</span>
                     <span>Audit trail</span>
@@ -808,6 +813,133 @@
      AUTH OVERLAY
      Declared BEFORE the script so the script can find it on parse.
 ============================================================= -->
+
+<!-- =============================================================
+     ALGORITHMS OVERLAY
+     What runs, with the parameters we chose. Declared BEFORE the script.
+============================================================= -->
+
+<div class="audit-overlay" id="algorithmsOverlay">
+
+    <div class="audit-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">DESIGN</div>
+                <h3>Algorithms</h3>
+                <p>How one frame becomes a prioritised, acknowledged incident.</p>
+            </div>
+
+            <button class="audit-close" id="algorithmsClose" type="button">
+                Close
+            </button>
+
+        </div>
+
+        <div class="algo-grid">
+
+            <article class="algo-card">
+                <h4>Weapon detection — YOLOv8n, fine-tuned</h4>
+                <span class="algo-where">ai/app/detector.py</span>
+                <p>
+                    Single-shot detection: one forward pass over a 416&nbsp;px frame returns
+                    boxes, classes and confidences together. No region proposals, which is why
+                    it keeps up with a live feed.
+                </p>
+                <ul>
+                    <li>Classes: knife, pistol — 4,409 train / 1,043 val images</li>
+                    <li>Validation: mAP@50 0.589, mAP@50-95 0.403</li>
+                    <li>416&nbsp;px input chosen for latency, not accuracy</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
+                <h4>False-positive suppression — three rules</h4>
+                <span class="algo-where">ai/app/main.py</span>
+                <p>The part that needed measuring rather than guessing.</p>
+                <ul>
+                    <li>One incident per object class per frame — a single photo returned five identical boxes</li>
+                    <li>8-frame confirmation streak (~⅓&nbsp;s at 27&nbsp;fps): a webcam run scored “pistol” on 1,282 frames at 35–55&nbsp;% with no pistol present, so one frame is not evidence</li>
+                    <li>90&nbsp;s cooldown per class per camera, or a 30&nbsp;fps stream raises 30 incidents a second</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
+                <h4>Severity grading — decided by the gateway</h4>
+                <span class="algo-where">IncidentService.deriveSeverity</span>
+                <p>
+                    The detector reports what it saw; the gateway decides how serious it is, so a
+                    new model cannot invent its own priority vocabulary.
+                </p>
+                <ul>
+                    <li>weapon · knife · pistol · rifle · gun · fire → CRITICAL, whatever the confidence</li>
+                    <li>smoke · fall → HIGH at ≥&nbsp;85&nbsp;%, otherwise MEDIUM</li>
+                    <li>everything else by confidence: ≥&nbsp;90 HIGH, ≥&nbsp;70 MEDIUM, else LOW</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
+                <h4>Atomic ingest — incident and alert in one transaction</h4>
+                <span class="algo-where">create_incident_with_alert()</span>
+                <p>
+                    The AI engine posts a detection; a stored procedure writes the incident and
+                    its alert together, and a trigger closes the alert when the incident is
+                    resolved. Detection → incident → alert cannot half-happen.
+                </p>
+            </article>
+
+            <article class="algo-card">
+                <h4>Authentication — BCrypt + HS256 JWT</h4>
+                <span class="algo-where">JwtService · JwtAuthenticationFilter</span>
+                <ul>
+                    <li>Passwords stored as BCrypt hashes (cost 10), never plaintext</li>
+                    <li>The token carries the role; a stateless filter verifies signature and expiry on every request</li>
+                    <li>The WebSocket handshake carries the same token, because a browser cannot set headers on it</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
+                <h4>Live delivery — pushed after commit</h4>
+                <span class="algo-where">IncidentSocketHandler</span>
+                <p>
+                    Events broadcast to every open cockpit, but only once the transaction has
+                    committed, so a rolled-back change is never announced. The client reconnects
+                    with backoff and falls back to polling if the channel stays down.
+                </p>
+            </article>
+
+            <article class="algo-card">
+                <h4>Authorisation and audit — enforced and recorded</h4>
+                <span class="algo-where">SecurityConfig · trg_incident_changes</span>
+                <p>
+                    Roles are checked server-side against the matrix the seeded
+                    <code>role_permissions</code> rows describe, and every incident change is
+                    written to <code>audit_logs</code> by a trigger — the trail exists whatever
+                    made the change.
+                </p>
+            </article>
+
+            <article class="algo-card">
+                <h4>Reporting — three formats, one surface</h4>
+                <span class="algo-where">reporting/ (C#)</span>
+                <p>
+                    CSV, Excel and PDF rendered by the reporting worker straight from PostgreSQL;
+                    the gateway proxies them so the cockpit keeps one origin and one token, and
+                    the worker stays on the loopback interface.
+                </p>
+            </article>
+
+        </div>
+
+        <p class="algo-note">
+            Every threshold on this page is a project decision, recorded in a comment beside the
+            code that uses it.
+        </p>
+
+    </div>
+
+</div>
 
 <!-- =============================================================
      CAMERA NETWORK OVERLAY (MoSCoW S-07)
@@ -1659,11 +1791,32 @@ function renderAnalytics(data) {
 const analyticsCloseButton = document.getElementById("analyticsClose");
 if (analyticsCloseButton) analyticsCloseButton.addEventListener("click", () => showView("live"));
 
+/* --------------------------------------------------------- algorithms -- */
+
+/* Static: this page documents what the system does and with which parameters,
+   so an examiner reads the reasoning next to the running system rather than in
+   a slide. Nothing here is fetched - it cannot drift from the code by accident
+   because every number also appears in a comment beside its implementation. */
+
+const algorithmsOverlay = document.getElementById("algorithmsOverlay");
+
+function openAlgorithms() {
+    if (algorithmsOverlay) algorithmsOverlay.classList.add("visible");
+}
+
+function closeAlgorithms() {
+    if (algorithmsOverlay) algorithmsOverlay.classList.remove("visible");
+}
+
+const algorithmsCloseButton = document.getElementById("algorithmsClose");
+if (algorithmsCloseButton) algorithmsCloseButton.addEventListener("click", () => showView("live"));
+
 /** Marks the nav item for a view active and closes every overlay. */
 function showView(view) {
     closeAudit();
     closeCameras();
     closeAnalytics();
+    closeAlgorithms();
     document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
     const target = document.querySelector('.nav-item[data-view="' + view + '"]');
     if (target) target.classList.add("active");
@@ -1808,6 +1961,8 @@ document.querySelectorAll(".nav-item").forEach(item => {
             openCameras();
         } else if (view === "analytics") {
             openAnalytics();
+        } else if (view === "algorithms") {
+            openAlgorithms();
         }
     });
 });
