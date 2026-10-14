@@ -62,6 +62,8 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - Incident exports: CSV / Excel / PDF (C# reporting worker)
 - Role-based access control across the API (MoSCoW S-05)
 - Audit trail of every incident change (MoSCoW S-06)
+- Camera and project administration (MoSCoW S-07)
+- Analytics view: incident trend, severity split, detection totals
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 

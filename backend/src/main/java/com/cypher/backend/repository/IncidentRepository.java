@@ -20,6 +20,8 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
     List<Incident> findByCameraIdOrderByOccurredAtDesc(Long cameraId);
 
+    long countByCameraId(Long cameraId);
+
     Page<Incident> findAllByOrderByOccurredAtDesc(Pageable pageable);
 
     /** Both filters optional; null means "no filter on this field". */

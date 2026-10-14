@@ -55,9 +55,14 @@
                     <span class="nav-count">07</span>
                 </button>
 
-                <button class="nav-item">
+                <button class="nav-item" data-view="analytics">
                     <span class="nav-icon">⌁</span>
                     <span>Analytics</span>
+                </button>
+
+                <button class="nav-item" data-view="cameras">
+                    <span class="nav-icon">◱</span>
+                    <span>Camera network</span>
                 </button>
 
                 <button class="nav-item" data-view="audit">
@@ -802,6 +807,101 @@
 ============================================================= -->
 
 <!-- =============================================================
+     CAMERA NETWORK OVERLAY (MoSCoW S-07)
+     Declared BEFORE the script so the script can find it on parse.
+============================================================= -->
+
+<div class="audit-overlay" id="cameraOverlay">
+
+    <div class="audit-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">MONITORED ASSETS</div>
+                <h3>Camera network</h3>
+                <p>Register an asset, point it at a stream, take it offline.</p>
+            </div>
+
+            <button class="audit-close" id="cameraClose" type="button">
+                Close
+            </button>
+
+        </div>
+
+        <table class="audit-table">
+
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Stream</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody id="cameraRows">
+                <tr><td colspan="6" class="audit-empty">Loading…</td></tr>
+            </tbody>
+
+        </table>
+
+        <form class="camera-form" id="cameraForm">
+
+            <div class="eyebrow">ADD CAMERA</div>
+
+            <div class="camera-form-row">
+                <input id="cameraCodeInput" placeholder="CAM-004" required>
+                <input id="cameraNameInput" placeholder="Name" required>
+                <input id="cameraLocationInput" placeholder="Location">
+                <input id="cameraStreamInput" placeholder="rtsp://… or http://…:81/stream">
+                <select id="cameraProjectSelect"></select>
+                <button type="submit" id="cameraSubmit">Add</button>
+            </div>
+
+            <small class="camera-form-error" id="cameraFormError"></small>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- =============================================================
+     ANALYTICS OVERLAY
+     Declared BEFORE the script so the script can find it on parse.
+============================================================= -->
+
+<div class="audit-overlay" id="analyticsOverlay">
+
+    <div class="audit-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">INSIGHT</div>
+                <h3>Analytics</h3>
+                <p>Where the incidents are, and how the network is holding up.</p>
+            </div>
+
+            <button class="audit-close" id="analyticsClose" type="button">
+                Close
+            </button>
+
+        </div>
+
+        <div class="analytics-grid" id="analyticsTiles"></div>
+
+        <div class="analytics-label">INCIDENTS, LAST 7 DAYS</div>
+        <div class="analytics-bars" id="analyticsBars"></div>
+
+    </div>
+
+</div>
+
+<!-- =============================================================
      AUDIT OVERLAY (MoSCoW S-06)
      Declared BEFORE the script so the script can find it on parse.
 ============================================================= -->
@@ -1349,13 +1449,221 @@ function closeAudit() {
 }
 
 const auditCloseButton = document.getElementById("auditClose");
-if (auditCloseButton) {
-    auditCloseButton.addEventListener("click", () => {
-        closeAudit();
-        document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-        const live = document.querySelector('.nav-item[data-view="live"]');
-        if (live) live.classList.add("active");
+if (auditCloseButton) auditCloseButton.addEventListener("click", () => showView("live"));
+
+/* ----------------------------------------------------- camera network -- */
+
+/* MoSCoW S-07. Register an asset, change its status, remove one that never saw
+   an incident. The server enforces who may write; the form hides itself for
+   roles that cannot. A new camera starts OFFLINE because nothing has verified
+   its stream yet. */
+
+const cameraOverlay = document.getElementById("cameraOverlay");
+const cameraRows = document.getElementById("cameraRows");
+const cameraForm = document.getElementById("cameraForm");
+const cameraFormError = document.getElementById("cameraFormError");
+
+function canAdminAssets() {
+    return !!me && ["SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER"].includes(me.role);
+}
+
+async function openCameras() {
+    if (!cameraOverlay) return;
+    cameraOverlay.classList.add("visible");
+    if (cameraForm) cameraForm.hidden = !canAdminAssets();
+    await Promise.all([loadCameraRows(), loadProjectOptions()]);
+}
+
+function closeCameras() {
+    if (cameraOverlay) cameraOverlay.classList.remove("visible");
+}
+
+async function loadCameraRows() {
+    if (!cameraRows) return;
+    cameraRows.innerHTML = '<tr><td colspan="6" class="audit-empty">Loading\u2026</td></tr>';
+    try {
+        renderCameras(await api("/api/cameras"));
+    } catch (err) {
+        cameraRows.innerHTML = '<tr><td colspan="6" class="audit-empty">Could not load cameras: ' +
+            escapeHtml(err.message) + '</td></tr>';
+    }
+}
+
+function renderCameras(cameras) {
+    if (!cameraRows) return;
+    if (!cameras || !cameras.length) {
+        cameraRows.innerHTML = '<tr><td colspan="6" class="audit-empty">No cameras registered.</td></tr>';
+        return;
+    }
+
+    cameraRows.innerHTML = cameras.map(camera => {
+        const live = camera.cameraStatus === "ONLINE";
+        const actions = canAdminAssets()
+            ? `<button data-camera-action="toggle" data-id="${camera.cameraId}" data-status="${camera.cameraStatus}">
+                   ${live ? "Take offline" : "Bring online"}
+               </button>
+               <button data-camera-action="delete" data-id="${camera.cameraId}">Delete</button>`
+            : "";
+        return `<tr>
+                    <td>${escapeHtml(camera.cameraCode)}</td>
+                    <td>${escapeHtml(camera.cameraName)}</td>
+                    <td>${escapeHtml(camera.location || "")}</td>
+                    <td class="camera-stream">${escapeHtml(camera.streamUrl || "")}</td>
+                    <td><span class="status-dot${live ? "" : " offline"}"></span> ${escapeHtml(camera.cameraStatus)}</td>
+                    <td class="camera-actions">${actions}</td>
+                </tr>`;
+    }).join("");
+
+    cameraRows.querySelectorAll("[data-camera-action]").forEach(button => {
+        button.addEventListener("click", async () => {
+            const id = button.getAttribute("data-id");
+            button.disabled = true;
+            try {
+                if (button.getAttribute("data-camera-action") === "delete") {
+                    await api("/api/cameras/" + id, { method: "DELETE" });
+                    notify("Camera removed.");
+                } else {
+                    const camera = await api("/api/cameras/" + id);
+                    const next = button.getAttribute("data-status") === "ONLINE" ? "OFFLINE" : "ONLINE";
+                    await api("/api/cameras/" + id, {
+                        method: "PUT",
+                        body: JSON.stringify({
+                            projectId: camera.projectId,
+                            cameraName: camera.cameraName,
+                            cameraCode: camera.cameraCode,
+                            location: camera.location,
+                            streamUrl: camera.streamUrl,
+                            cameraStatus: next
+                        })
+                    });
+                    notify("Camera " + camera.cameraCode + " is " + next + ".");
+                }
+                await loadCameraRows();
+                await refreshAll();
+            } catch (err) {
+                notify("Could not update camera: " + err.message);
+                button.disabled = false;
+            }
+        });
     });
+}
+
+async function loadProjectOptions() {
+    const select = document.getElementById("cameraProjectSelect");
+    if (!select) return;
+    try {
+        const projects = await api("/api/projects");
+        select.innerHTML = projects.map(project =>
+            `<option value="${project.projectId}">${escapeHtml(project.projectName)}</option>`).join("");
+    } catch (_) {
+        select.innerHTML = "";
+    }
+}
+
+if (cameraForm) {
+    cameraForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        cameraFormError.textContent = "";
+        const submit = document.getElementById("cameraSubmit");
+        submit.disabled = true;
+        try {
+            await api("/api/cameras", {
+                method: "POST",
+                body: JSON.stringify({
+                    projectId: Number(document.getElementById("cameraProjectSelect").value),
+                    cameraCode: document.getElementById("cameraCodeInput").value.trim(),
+                    cameraName: document.getElementById("cameraNameInput").value.trim(),
+                    location: document.getElementById("cameraLocationInput").value.trim(),
+                    streamUrl: document.getElementById("cameraStreamInput").value.trim(),
+                    cameraStatus: "OFFLINE"
+                })
+            });
+            cameraForm.reset();
+            notify("Camera registered.");
+            await loadCameraRows();
+            await refreshAll();
+        } catch (err) {
+            cameraFormError.textContent = err.message;
+        } finally {
+            submit.disabled = false;
+        }
+    });
+}
+
+const cameraCloseButton = document.getElementById("cameraClose");
+if (cameraCloseButton) cameraCloseButton.addEventListener("click", () => showView("live"));
+
+/* ----------------------------------------------------------- analytics -- */
+
+/* Numbers straight from the database - the cockpit counts nothing itself. */
+
+const analyticsOverlay = document.getElementById("analyticsOverlay");
+
+async function openAnalytics() {
+    if (!analyticsOverlay) return;
+    analyticsOverlay.classList.add("visible");
+    const tiles = document.getElementById("analyticsTiles");
+    tiles.innerHTML = '<div class="analytics-tile"><span>Loading\u2026</span></div>';
+    document.getElementById("analyticsBars").innerHTML = "";
+
+    try {
+        renderAnalytics(await api("/api/analytics/summary"));
+    } catch (err) {
+        tiles.innerHTML = '<div class="analytics-tile"><span>Could not load analytics: ' +
+            escapeHtml(err.message) + '</span></div>';
+    }
+}
+
+function closeAnalytics() {
+    if (analyticsOverlay) analyticsOverlay.classList.remove("visible");
+}
+
+function renderAnalytics(data) {
+    const severity = data.incidentsBySeverity || {};
+    const cameras = data.camerasByStatus || {};
+    const cameraTotal = (cameras.ONLINE || 0) + (cameras.OFFLINE || 0) + (cameras.MAINTENANCE || 0);
+
+    const tiles = [
+        ["Incidents logged", data.incidentsTotal],
+        ["Critical", severity.CRITICAL || 0],
+        ["High", severity.HIGH || 0],
+        ["Detections", data.detectionsTotal],
+        ["Detections, 7 days", data.detectionsLast7Days],
+        ["Cameras online", (cameras.ONLINE || 0) + " / " + cameraTotal]
+    ];
+
+    document.getElementById("analyticsTiles").innerHTML = tiles.map(([label, value]) =>
+        `<div class="analytics-tile"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></div>`
+    ).join("");
+
+    const days = data.incidentsLast7Days || [];
+    const bars = document.getElementById("analyticsBars");
+    if (!days.length) {
+        bars.innerHTML = '<div class="audit-empty">No incidents in the last seven days.</div>';
+        return;
+    }
+    const peak = Math.max(...days.map(day => day.count), 1);
+    bars.innerHTML = days.map(day =>
+        `<div class="analytics-bar">
+             <span class="analytics-bar-count">${day.count}</span>
+             <div class="analytics-bar-track">
+                 <div class="analytics-bar-fill" style="height:${Math.max(6, Math.round((day.count / peak) * 100))}%"></div>
+             </div>
+             <small>${escapeHtml(day.day.slice(5))}</small>
+         </div>`).join("");
+}
+
+const analyticsCloseButton = document.getElementById("analyticsClose");
+if (analyticsCloseButton) analyticsCloseButton.addEventListener("click", () => showView("live"));
+
+/** Marks the nav item for a view active and closes every overlay. */
+function showView(view) {
+    closeAudit();
+    closeCameras();
+    closeAnalytics();
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    const target = document.querySelector('.nav-item[data-view="' + view + '"]');
+    if (target) target.classList.add("active");
 }
 
 
@@ -1487,14 +1795,15 @@ document.querySelectorAll(".filter").forEach(button => {
 
 document.querySelectorAll(".nav-item").forEach(item => {
     item.addEventListener("click", () => {
-        document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-        item.classList.add("active");
-
         const view = item.getAttribute("data-view");
+        showView(view || "live");
+
         if (view === "audit") {
             openAudit();
-        } else if (view === "live") {
-            closeAudit();
+        } else if (view === "cameras") {
+            openCameras();
+        } else if (view === "analytics") {
+            openAnalytics();
         }
     });
 });

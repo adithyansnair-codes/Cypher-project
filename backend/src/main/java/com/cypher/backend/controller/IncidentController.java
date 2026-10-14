@@ -3,8 +3,6 @@ package com.cypher.backend.controller;
 import com.cypher.backend.dto.request.IncidentIngestRequest;
 import com.cypher.backend.dto.response.DashboardStatsResponse;
 import com.cypher.backend.dto.response.IncidentResponse;
-import com.cypher.backend.entity.Camera;
-import com.cypher.backend.repository.CameraRepository;
 import com.cypher.backend.repository.UserRepository;
 import com.cypher.backend.service.IncidentService;
 import jakarta.validation.Valid;
@@ -27,14 +25,11 @@ import java.util.Map;
 public class IncidentController {
 
     private final IncidentService incidentService;
-    private final CameraRepository cameraRepository;
     private final UserRepository userRepository;
 
     public IncidentController(IncidentService incidentService,
-                              CameraRepository cameraRepository,
                               UserRepository userRepository) {
         this.incidentService = incidentService;
-        this.cameraRepository = cameraRepository;
         this.userRepository = userRepository;
     }
 
@@ -95,12 +90,6 @@ public class IncidentController {
     @GetMapping("/dashboard/stats")
     public DashboardStatsResponse stats() {
         return incidentService.stats();
-    }
-
-    /** Monitored assets, for the sidebar. */
-    @GetMapping("/cameras")
-    public List<Camera> listCameras() {
-        return cameraRepository.findAllByOrderByCameraNameAsc();
     }
 
     // -----------------------------------------------------------------------

@@ -82,6 +82,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/reports/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "ANALYST", "OPERATOR")
 
+                        // Asset administration (S-07): anyone who owns cameras
+                        // may edit them, but only ADMIN may remove one.
+                        .requestMatchers(HttpMethod.POST, "/api/cameras/**", "/api/projects/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/cameras/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/cameras/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN")
+
                         // Reads stay open to every authenticated role, VIEWER
                         // included: dashboard, incidents, cameras, reports, /api/me.
 

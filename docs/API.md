@@ -48,9 +48,12 @@ by V4 are the same matrix expressed as data.
 | Capability | SUPER_ADMIN | ADMIN | SECURITY_MANAGER | OPERATOR | ANALYST | VIEWER |
 |---|---|---|---|---|---|---|
 | Cockpit: incidents, cameras, dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Analytics view | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Acknowledge / resolve incidents | ✅ | ✅ | ✅ | ✅ | – | – |
 | Submit detections (`POST /api/incidents/ingest`) | ✅ | ✅ | ✅ | – | – | – |
 | Download reports (`/api/reports/*`) | ✅ | ✅ | ✅ | ✅ | ✅ | – |
+| Add / edit cameras and projects | ✅ | ✅ | ✅ | – | – | – |
+| Delete a camera | ✅ | ✅ | – | – | – | – |
 | Read the audit trail (`/api/audit`) | ✅ | ✅ | – | – | – | – |
 | User directory (`/users/*`) | ✅ | ✅ | – | – | – | – |
 
@@ -242,7 +245,48 @@ The four tiles across the top of the cockpit, plus asset counts.
 
 Monitored assets for the sidebar, ordered by name. Returns `Camera` rows
 including `cameraCode`, `location`, `streamUrl` and `cameraStatus`
-(`ONLINE` / `OFFLINE` / `MAINTENANCE`).
+(`ONLINE` / `OFFLINE` / `MAINTENANCE`). `?projectId=` narrows it to one project.
+
+### `POST /api/cameras` — register an asset (MoSCoW S-07)
+
+```json
+{ "projectId": 1, "cameraCode": "CAM-004", "cameraName": "Gate B Camera",
+  "location": "Gate B", "streamUrl": "http://192.168.1.50:81/stream" }
+```
+
+`201` with the created row. `cameraStatus` defaults to `OFFLINE` — nothing has
+verified the stream yet. `409` if the code is already taken, `400` on an unknown
+project. This `streamUrl` is where an ESP32-CAM's MJPEG endpoint belongs.
+
+### `PUT /api/cameras/{id}`
+
+Same body, replaces the asset's fields. `404` if it does not exist, `409` on a
+duplicate code.
+
+### `DELETE /api/cameras/{id}`
+
+`204` on success. Refused with `409` when the camera has incidents: the incident
+record references it, so the honest operation is to set it `OFFLINE` instead.
+
+### `GET /api/projects` · `POST /api/projects`
+
+Projects sit at the top of the asset hierarchy — every camera belongs to one.
+`POST` takes `{"projectName": "...", "description": "...", "location": "..."}`,
+answers `201`, or `409` if the name is taken.
+
+### `GET /api/analytics/summary`
+
+The Analytics view in one call: incident counts by severity and status, a
+seven-day incident series, cameras by status, and detection totals. Counting
+happens in the database; the cockpit only renders.
+
+```json
+{ "incidentsBySeverity": { "CRITICAL": 12, "HIGH": 3 },
+  "incidentsByStatus": { "OPEN": 9, "ACKNOWLEDGED": 1 },
+  "incidentsLast7Days": [ { "day": "2026-10-14", "count": 2 } ],
+  "camerasByStatus": { "ONLINE": 3 },
+  "detectionsTotal": 412, "detectionsLast7Days": 96, "incidentsTotal": 15 }
+```
 
 ---
 
@@ -283,5 +327,4 @@ so an invalid value is rejected by the database rather than silently stored.
 
 | Endpoint | For |
 |---|---|
-| `GET /api/incidents/{id}/alerts` | alert history per incident |
-| Project and camera administration | MoSCoW S-07 |
+| `GET /api/incidents/{id}/alerts` | alert history per incident — the `alerts` table is written, nothing reads it back yet |

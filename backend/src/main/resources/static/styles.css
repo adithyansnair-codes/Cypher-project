@@ -198,7 +198,9 @@ button {
     border-right:
         1px solid var(--border);
 
-    z-index: 50;
+    /* Above the overlays (z-index 900): the nav stays usable while an audit,
+       camera or analytics panel is open, so views can be switched directly. */
+    z-index: 950;
 
 }
 
@@ -2509,7 +2511,8 @@ footer b {
 
 .audit-overlay {
     position: fixed;
-    inset: 0;
+    /* Beside the sidebar, which paints above this overlay (z-index 950). */
+    inset: 0 0 0 var(--sidebar-width);
     display: none;
     align-items: flex-start;
     justify-content: center;
@@ -2521,6 +2524,11 @@ footer b {
 }
 
 .audit-overlay.visible { display: flex; }
+
+@media (max-width: 900px) {
+    /* The sidebar is hidden at this width, so the panel may use the whole page. */
+    .audit-overlay { left: 0; }
+}
 
 .audit-panel {
     width: min(980px, 100%);
@@ -2587,6 +2595,152 @@ footer b {
 .audit-empty {
     padding: 22px 10px;
     text-align: center;
+    color: var(--text-tertiary);
+}
+
+/* ------------------------------------------- camera network (S-07) -- */
+
+.camera-form {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.camera-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.camera-form-row input,
+.camera-form-row select {
+    flex: 1 1 140px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    background: var(--surface-soft);
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text);
+}
+
+.camera-form-row button {
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.camera-form-error {
+    display: block;
+    margin-top: 8px;
+    color: var(--red);
+    font-size: 12px;
+}
+
+.camera-actions button {
+    margin-right: 6px;
+    padding: 5px 9px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.camera-stream {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* -------------------------------------------------------- analytics -- */
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.analytics-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+
+.analytics-tile span {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.analytics-tile strong {
+    font-size: 22px;
+    color: var(--text);
+}
+
+.analytics-label {
+    margin: 22px 0 10px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    color: var(--text-tertiary);
+}
+
+.analytics-bars {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    height: 168px;
+}
+
+.analytics-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.analytics-bar-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.analytics-bar-fill {
+    width: 100%;
+    max-width: 46px;
+    border-radius: 8px 8px 3px 3px;
+    background: linear-gradient(180deg, var(--accent), rgba(21, 157, 175, .35));
+}
+
+.analytics-bar-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.analytics-bar small {
+    font-family: var(--mono);
+    font-size: 10px;
     color: var(--text-tertiary);
 }
 
