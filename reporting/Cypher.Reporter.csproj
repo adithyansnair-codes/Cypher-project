@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Cypher.Reporter</RootNamespace>
+    <AssemblyName>Cypher.Reporter</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
+  </ItemGroup>
+
+</Project>

@@ -150,6 +150,31 @@ rolls back is never announced.
 
 ---
 
+## Reports (CSV / Excel / PDF) — MoSCoW S-02..S-04
+
+The C# reporting worker renders the incident record into the three formats an
+operator hands to a supervisor. The gateway proxies them, so the cockpit keeps
+using one origin and one bearer token, and the worker stays private.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/reports/incidents.csv` | CSV, UTF-8 with BOM (opens cleanly in Excel) |
+| `GET /api/reports/incidents.xlsx` | Excel workbook — frozen header, date formats |
+| `GET /api/reports/incidents.pdf` | A4 PDF with page numbers |
+
+All three accept `?status=`, `?severity=` and `?limit=` (default 500, max 5000),
+matching the filters the cockpit already uses, and answer with
+`Content-Disposition: attachment; filename="cypher-incidents-<utc>.{ext}"`.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" -OJ "$BASE/api/reports/incidents.pdf"
+```
+
+The worker itself listens on `127.0.0.1:5001` and is never exposed. If it is
+down the gateway answers `503` — the live incident view keeps working.
+
+---
+
 ## Dashboard and assets
 
 ### `GET /api/dashboard/stats`
@@ -216,5 +241,4 @@ so an invalid value is rejected by the database rather than silently stored.
 | Endpoint | For |
 |---|---|
 | `GET /api/incidents/{id}/alerts` | alert history per incident |
-| `GET /api/reports/*` | CSV / Excel / PDF export (needs the C# worker) |
 | Project and camera administration | MoSCoW S-07 |

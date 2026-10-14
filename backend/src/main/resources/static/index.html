@@ -633,15 +633,15 @@
 
                     <div class="report-buttons">
 
-                        <button>
+                        <button type="button" data-report="pdf">
                             PDF
                         </button>
 
-                        <button>
+                        <button type="button" data-report="xlsx">
                             XLSX
                         </button>
 
-                        <button>
+                        <button type="button" data-report="csv">
                             CSV
                         </button>
 
@@ -1260,6 +1260,54 @@ if (healthButton) healthButton.addEventListener("click", () => injectDemo("HEALT
 
 const threatButton = document.getElementById("threatButton");
 if (threatButton) threatButton.addEventListener("click", () => injectDemo("THREAT"));
+
+
+/* ---------------------------------------------------------- reporting -- */
+
+/* The three export buttons call the gateway, which proxies to the C# reporting
+   worker (MoSCoW S-02..S-04). The file is fetched with the bearer token and
+   handed to the browser as a blob, so the token never rides in a URL. */
+
+async function downloadReport(format) {
+    const query = activeFilter === "ALL" ? "" : "?severity=" + encodeURIComponent(activeFilter);
+    try {
+        const response = await fetch(API + "/api/reports/incidents." + format + query, {
+            headers: { Authorization: "Bearer " + getToken() }
+        });
+
+        if (!response.ok) {
+            let detail = response.statusText;
+            try {
+                const body = await response.json();
+                detail = body.error || detail;
+            } catch (_) { /* not JSON */ }
+            throw new Error(detail);
+        }
+
+        const disposition = response.headers.get("content-disposition") || "";
+        const named = /filename="([^"]+)"/.exec(disposition);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = named ? named[1] : "cypher-incidents." + format;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        notify("Export ready: " + link.download);
+    } catch (err) {
+        notify("Export failed: " + err.message);
+    }
+}
+
+document.querySelectorAll("[data-report]").forEach(button => {
+    button.addEventListener("click", () => {
+        const format = button.getAttribute("data-report");
+        button.disabled = true;
+        downloadReport(format).finally(() => { button.disabled = false; });
+    });
+});
 
 
 /* -------------------------------------------------------------- filters -- */

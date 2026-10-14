@@ -59,6 +59,7 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - REST APIs
 - Incident dashboard with acknowledge / resolve workflow
 - Live incident push over WebSocket (MoSCoW M-03)
+- Incident exports: CSV / Excel / PDF (C# reporting worker)
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 
