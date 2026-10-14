@@ -60,6 +60,8 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - Incident dashboard with acknowledge / resolve workflow
 - Live incident push over WebSocket (MoSCoW M-03)
 - Incident exports: CSV / Excel / PDF (C# reporting worker)
+- Role-based access control across the API (MoSCoW S-05)
+- Audit trail of every incident change (MoSCoW S-06)
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 

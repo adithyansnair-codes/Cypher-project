@@ -58,6 +58,33 @@ public class SecurityConfig {
                         // on it (MoSCoW M-03).
                         .requestMatchers("/ws/**").permitAll()
 
+                        // -------------------------------------------------- RBAC --
+                        // MoSCoW S-05. Roles arrive in the JWT's `role` claim and
+                        // become ROLE_<role> authorities. This matrix mirrors the
+                        // role_permissions rows seeded by V2 and completed by V4.
+
+                        // Administration: the user directory and the audit trail.
+                        .requestMatchers("/users/**", "/api/audit/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN")
+
+                        // The operator workflow: acknowledge and resolve.
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/incidents/*/acknowledge", "/api/incidents/*/resolve")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR")
+
+                        // Detection ingest is machine-to-machine; the AI engine
+                        // signs in with an operator-grade service account.
+                        .requestMatchers(HttpMethod.POST, "/api/incidents/ingest")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER")
+
+                        // Exports: the roles whose seeded permission set includes
+                        // REPORT_READ. VIEWER deliberately does not.
+                        .requestMatchers("/api/reports/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "ANALYST", "OPERATOR")
+
+                        // Reads stay open to every authenticated role, VIEWER
+                        // included: dashboard, incidents, cameras, reports, /api/me.
+
                         // Everything else needs a valid bearer token.
                         .anyRequest().authenticated())
 

@@ -1,28 +1,63 @@
-version: "3.8"
+# CYPHER - local development stack (MoSCoW M-10).
+#
+#   cp .env.example .env      # then set DB_PASSWORD and JWT_SECRET
+#   docker compose up --build
+#
+# The gateway serves the cockpit itself, so the whole demo is one database plus
+# one application container, at http://localhost:8081.
+#
+# The C# reporting worker runs on the host rather than in a container (it is a
+# plain `dotnet run --project reporting` away), and the backend reaches it
+# through host.docker.internal - see REPORTING_URL below.
+#
+# The legacy `version:` key is gone: Docker Compose v2 ignores it and warns.
 
 services:
 
   postgres:
     image: postgres:17
     container_name: cypher-db
-    restart: always
-
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: cypher
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: cypher123
-
+      POSTGRES_DB: ${DB_NAME:-cypher}
+      POSTGRES_USER: ${DB_USER:-cypher_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
     ports:
-    - "5433:5432"
+      # Published on 5433 so a developer who already runs PostgreSQL on 5432
+      # (Homebrew, apt) can keep both. Inside the network it is still 5432.
+      - "5433:5432"
+    volumes:
+      - cypher_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cypher_user} -d ${DB_NAME:-cypher}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
-
     build: .
-
     container_name: cypher-backend
-
+    restart: unless-stopped
     depends_on:
-      - postgres
-
+      postgres:
+        # Wait for "ready to accept connections", not merely "started": Flyway
+        # migrates at boot and would otherwise fail connecting.
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-cypher}
+      DB_USER: ${DB_USER:-cypher_user}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      # Required: JwtService refuses to start on the committed development key.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env - openssl rand -base64 64}
+      # The reporting worker on the host. On Linux, extra_hosts below makes
+      # host.docker.internal resolve; Docker Desktop provides it already.
+      REPORTING_URL: ${REPORTING_URL:-http://host.docker.internal:5001}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8081:8081"
+
+volumes:
+  cypher_pgdata:

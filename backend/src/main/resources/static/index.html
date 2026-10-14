@@ -49,7 +49,7 @@
                     OPERATIONS
                 </div>
 
-                <button class="nav-item active">
+                <button class="nav-item active" data-view="live">
                     <span class="nav-icon">◈</span>
                     <span>Live cockpit</span>
                     <span class="nav-count">07</span>
@@ -60,7 +60,7 @@
                     <span>Analytics</span>
                 </button>
 
-                <button class="nav-item">
+                <button class="nav-item" data-view="audit">
                     <span class="nav-icon">▤</span>
                     <span>Audit trail</span>
                 </button>
@@ -103,13 +103,13 @@
 
             <div class="profile">
 
-                <div class="profile-avatar">
+                <div class="profile-avatar" id="profileAvatar">
                     CA
                 </div>
 
                 <div class="profile-info">
-                    <strong>Cypher Admin</strong>
-                    <span>Administrator</span>
+                    <strong id="profileName">Cypher Admin</strong>
+                    <span id="profileRole">Administrator</span>
                 </div>
 
                 <button class="profile-menu">
@@ -801,6 +801,51 @@
      Declared BEFORE the script so the script can find it on parse.
 ============================================================= -->
 
+<!-- =============================================================
+     AUDIT OVERLAY (MoSCoW S-06)
+     Declared BEFORE the script so the script can find it on parse.
+============================================================= -->
+
+<div class="audit-overlay" id="auditOverlay">
+
+    <div class="audit-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">GOVERNANCE</div>
+                <h3>Audit trail</h3>
+                <p>Every change the database trigger logged, newest first.</p>
+            </div>
+
+            <button class="audit-close" id="auditClose" type="button">
+                Close
+            </button>
+
+        </div>
+
+        <table class="audit-table">
+
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Actor</th>
+                    <th>Event</th>
+                    <th>Entity</th>
+                    <th>Detail</th>
+                </tr>
+            </thead>
+
+            <tbody id="auditRows">
+                <tr><td colspan="5" class="audit-empty">Loading…</td></tr>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
 <div class="auth-overlay" id="authOverlay">
     <form class="auth-card" id="authForm" autocomplete="on">
         <div class="auth-brand">CYPHER<span>/</span>OPS</div>
@@ -866,6 +911,48 @@ function setToken(token) {
 
 function clearToken() {
     localStorage.removeItem(TOKEN_KEY);
+}
+
+/* ------------------------------------------------------------- profile -- */
+
+/* The JWT carries only the email and the role, so the cockpit asks the gateway
+   who is signed in. The role shapes the UI: a VIEWER watches the same stream
+   without the Ack/Resolve controls the server would refuse anyway (MoSCoW S-05). */
+
+const ACTION_ROLES = ["SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR"];
+let me = null;
+
+function canAct() {
+    return !!me && ACTION_ROLES.includes(me.role);
+}
+
+/* Exports follow the same idea: the seeded permission set grants REPORT_READ to
+   every role except VIEWER. */
+const EXPORT_ROLES = ["SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "ANALYST", "OPERATOR"];
+
+function canExport() {
+    return !!me && EXPORT_ROLES.includes(me.role);
+}
+
+async function loadMe() {
+    try {
+        me = await api("/api/me");
+    } catch (_) {
+        me = null;
+    }
+    if (!me) return null;
+
+    const name = document.getElementById("profileName");
+    const role = document.getElementById("profileRole");
+    const avatar = document.getElementById("profileAvatar");
+
+    if (name) name.textContent = me.fullName || me.email || "Operator";
+    if (role) role.textContent = (me.role || "").replace(/_/g, " ");
+    if (avatar) {
+        avatar.textContent = (me.fullName || me.email || "?")
+            .trim().split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase();
+    }
+    return me;
 }
 
 
@@ -938,6 +1025,7 @@ if (authForm) {
             setToken(data.token);
             document.getElementById("authPassword").value = "";
             hideAuthOverlay();
+            await loadMe();
             await refreshAll();
             connectSocket();
         } catch (err) {
@@ -957,6 +1045,8 @@ if (logoutButton) {
         clearToken();
         disconnectSocket();
         stopRefresh();
+        closeAudit();
+        me = null;
         showAuthOverlay("Signed out.");
     });
 }
@@ -1033,10 +1123,12 @@ function incidentHtml(i) {
 
     const actions = status === "RESOLVED" || status === "CLOSED"
         ? '<span class="incident-status resolved-text">' + escapeHtml(status) + '</span>'
-        : '<span class="incident-actions">' +
-              (open ? `<button data-action="acknowledge" data-id="${i.incidentId}">Ack</button>` : "") +
-              `<button data-action="resolve" data-id="${i.incidentId}">Resolve</button>` +
-          '</span>';
+        : !canAct()
+            ? '<span class="incident-status">READ ONLY</span>'
+            : '<span class="incident-actions">' +
+                  (open ? `<button data-action="acknowledge" data-id="${i.incidentId}">Ack</button>` : "") +
+                  `<button data-action="resolve" data-id="${i.incidentId}">Resolve</button>` +
+              '</span>';
 
     const where = [i.cameraName, i.location].filter(Boolean).join(" \u00b7 ");
     const when = i.occurredAt ? new Date(i.occurredAt).toLocaleString() : "";
@@ -1204,6 +1296,68 @@ function disconnectSocket() {
     }
 }
 
+/* --------------------------------------------------------- audit trail -- */
+
+/* MoSCoW S-06. The rows are written by the trg_incident_changes database
+   trigger, so the trail exists whether a change came from the API, the AI
+   engine or psql. Reading it is an ADMIN privilege: the server enforces that,
+   and this view says so plainly instead of failing silently. */
+
+const auditOverlay = document.getElementById("auditOverlay");
+const auditRows = document.getElementById("auditRows");
+
+async function openAudit() {
+    if (!auditOverlay || !auditRows) return;
+    auditOverlay.classList.add("visible");
+    auditRows.innerHTML = '<tr><td colspan="5" class="audit-empty">Loading\u2026</td></tr>';
+
+    try {
+        renderAudit(await api("/api/audit?limit=100"));
+    } catch (err) {
+        const denied = /forbidden|403/i.test(String(err.message));
+        auditRows.innerHTML = '<tr><td colspan="5" class="audit-empty">' +
+            (denied
+                ? "Your role cannot read the audit trail."
+                : "Could not load the audit trail: " + escapeHtml(err.message)) +
+            '</td></tr>';
+    }
+}
+
+function renderAudit(entries) {
+    if (!auditRows) return;
+    if (!entries || !entries.length) {
+        auditRows.innerHTML = '<tr><td colspan="5" class="audit-empty">Nothing logged yet.</td></tr>';
+        return;
+    }
+
+    auditRows.innerHTML = entries.map(entry => {
+        const when = entry.createdAt ? new Date(entry.createdAt).toLocaleString() : "";
+        const detail = [entry.severity, entry.status].filter(Boolean).join(" \u00b7 ");
+        const entity = (entry.entityName || "") + (entry.entityId ? " #" + entry.entityId : "");
+        return `<tr>
+                    <td>${escapeHtml(when)}</td>
+                    <td>${escapeHtml(entry.actor || "system")}</td>
+                    <td>${escapeHtml(entry.eventType || "")}</td>
+                    <td>${escapeHtml(entity)}</td>
+                    <td>${escapeHtml(detail)}</td>
+                </tr>`;
+    }).join("");
+}
+
+function closeAudit() {
+    if (auditOverlay) auditOverlay.classList.remove("visible");
+}
+
+const auditCloseButton = document.getElementById("auditClose");
+if (auditCloseButton) {
+    auditCloseButton.addEventListener("click", () => {
+        closeAudit();
+        document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+        const live = document.querySelector('.nav-item[data-view="live"]');
+        if (live) live.classList.add("active");
+    });
+}
+
 
 /* ------------------------------------------------------- demo controls -- */
 
@@ -1269,6 +1423,10 @@ if (threatButton) threatButton.addEventListener("click", () => injectDemo("THREA
    handed to the browser as a blob, so the token never rides in a URL. */
 
 async function downloadReport(format) {
+    if (!canExport()) {
+        notify("Your role cannot export reports.");
+        return;
+    }
     const query = activeFilter === "ALL" ? "" : "?severity=" + encodeURIComponent(activeFilter);
     try {
         const response = await fetch(API + "/api/reports/incidents." + format + query, {
@@ -1331,6 +1489,13 @@ document.querySelectorAll(".nav-item").forEach(item => {
     item.addEventListener("click", () => {
         document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
         item.classList.add("active");
+
+        const view = item.getAttribute("data-view");
+        if (view === "audit") {
+            openAudit();
+        } else if (view === "live") {
+            closeAudit();
+        }
     });
 });
 
@@ -1394,6 +1559,7 @@ function renderSyncedAt() {
         return;
     }
     hideAuthOverlay();
+    await loadMe();
     await refreshAll();
     connectSocket();
 })();

@@ -39,6 +39,27 @@ The JWT carries the email as `sub` and the role as a `role` claim, and maps to a
 
 ---
 
+## Roles and permissions — MoSCoW S-05
+
+Every token carries the account's role, and the gateway enforces the matrix
+below (`SecurityConfig`). The `role_permissions` rows seeded by V2 and completed
+by V4 are the same matrix expressed as data.
+
+| Capability | SUPER_ADMIN | ADMIN | SECURITY_MANAGER | OPERATOR | ANALYST | VIEWER |
+|---|---|---|---|---|---|---|
+| Cockpit: incidents, cameras, dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Acknowledge / resolve incidents | ✅ | ✅ | ✅ | ✅ | – | – |
+| Submit detections (`POST /api/incidents/ingest`) | ✅ | ✅ | ✅ | – | – | – |
+| Download reports (`/api/reports/*`) | ✅ | ✅ | ✅ | ✅ | ✅ | – |
+| Read the audit trail (`/api/audit`) | ✅ | ✅ | – | – | – | – |
+| User directory (`/users/*`) | ✅ | ✅ | – | – | – | – |
+
+Registration always creates a **VIEWER**; elevated roles are assigned by an
+administrator. A refusal is a `403`, and the cockpit hides the controls a role
+cannot use rather than letting the operator discover it by failing.
+
+---
+
 ## Incidents
 
 ### `GET /api/incidents`
@@ -176,6 +197,28 @@ down the gateway answers `503` — the live incident view keeps working.
 ---
 
 ## Dashboard and assets
+
+### `GET /api/me`
+
+The signed-in operator, so the cockpit can name them and size up their rights.
+
+```json
+{ "userId": 1, "fullName": "System Administrator", "email": "admin@cypher.com",
+  "role": "SUPER_ADMIN", "status": "ACTIVE" }
+```
+
+### `GET /api/audit?limit=100`
+
+The audit trail, newest first (MoSCoW S-06). Rows are written by the
+`trg_incident_changes` database trigger, so they exist whatever made the change
+— the API, the AI engine or psql. `SUPER_ADMIN` and `ADMIN` only; anyone else
+gets `403`.
+
+```json
+[ { "auditId": 12, "eventType": "UPDATE", "entityName": "incidents", "entityId": 3,
+    "actor": "System Administrator", "status": "ACKNOWLEDGED", "severity": "CRITICAL",
+    "createdAt": "2026-10-14T14:20:04Z" } ]
+```
 
 ### `GET /api/dashboard/stats`
 

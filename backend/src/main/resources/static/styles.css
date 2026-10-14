@@ -2505,6 +2505,91 @@ footer b {
 
 .auth-overlay.visible { display: flex; }
 
+/* ------------------------------------------------- audit trail (S-06) -- */
+
+.audit-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 56px 24px;
+    background: rgba(12, 16, 20, .72);
+    backdrop-filter: blur(6px);
+    z-index: 900;
+    overflow: auto;
+}
+
+.audit-overlay.visible { display: flex; }
+
+.audit-panel {
+    width: min(980px, 100%);
+    padding: 26px 28px 30px;
+    border-radius: 18px;
+    background: var(--surface-solid);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+}
+
+.audit-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.audit-head h3 {
+    margin: 4px 0 6px;
+    font-size: 20px;
+}
+
+.audit-head p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+}
+
+.audit-close {
+    padding: 8px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    background: transparent;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.audit-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-strong);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.audit-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.audit-empty {
+    padding: 22px 10px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
 .auth-card {
     width: min(360px, calc(100vw - 48px));
     padding: 32px;
