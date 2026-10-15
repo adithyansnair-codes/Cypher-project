@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,6 +107,7 @@ public class IncidentService {
         }
         IncidentResponse response = enrich(List.of(incidentRepository.save(incident))).get(0);
         publishAfterCommit("incident.updated", response);
+        operatorStep("Operator acknowledged incident #" + incidentId, response.cameraId());
         return response;
     }
 
@@ -133,6 +135,8 @@ public class IncidentService {
         }
         IncidentResponse response = enrich(List.of(incidentRepository.save(incident))).get(0);
         publishAfterCommit("incident.updated", response);
+        operatorStep("Operator resolved incident #" + incidentId + " -> alerts closed by trigger",
+                response.cameraId());
         return response;
     }
 
@@ -174,9 +178,11 @@ public class IncidentService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No camera with id " + request.getCameraId()));
 
-        String severity = (request.getSeverity() == null || request.getSeverity().isBlank())
+        SeverityDecision decision = (request.getSeverity() == null || request.getSeverity().isBlank())
                 ? deriveSeverity(request.getDetectedObject(), request.getConfidence())
-                : request.getSeverity().trim().toUpperCase();
+                : new SeverityDecision(request.getSeverity().trim().toUpperCase(),
+                        "severity supplied by the caller");
+        String severity = decision.severity();
 
         if (!List.of("LOW", "MEDIUM", "HIGH", "CRITICAL").contains(severity)) {
             throw new IllegalArgumentException(
@@ -204,6 +210,26 @@ public class IncidentService {
 
         IncidentResponse response = enrich(List.of(saved)).get(0);
         publishAfterCommit("incident.created", response);
+
+        // The reasoning behind this incident, for the cockpit's live trace: the
+        // detector's own steps, the rule that graded it, and where it landed.
+        Map<String, Object> detection = new LinkedHashMap<>();
+        detection.put("incidentId", response.incidentId());
+        detection.put("cameraId", response.cameraId());
+        detection.put("cameraCode", response.cameraCode());
+        detection.put("title", response.title());
+        detection.put("severity", response.severity());
+        detection.put("rule", decision.reason());
+        detection.put("detectedObject", request.getDetectedObject());
+        detection.put("confidence", request.getConfidence());
+        detection.put("model", request.getModel());
+        detection.put("threshold", request.getThreshold());
+        detection.put("inferenceMs", request.getInferenceMs());
+        detection.put("source", request.getSource() == null ? "gateway ingest" : request.getSource());
+        detection.put("steps", request.getTrace() == null ? List.of() : request.getTrace());
+        detection.put("at", Instant.now().toString());
+        publishAfterCommit("detection.trace", detection);
+
         return response;
     }
 
@@ -212,7 +238,11 @@ public class IncidentService {
      * CRITICAL regardless of confidence; anything else is graded by confidence.
      * Kept in the gateway so a new detector cannot invent its own vocabulary.
      */
-    static String deriveSeverity(String detectedObject, Double confidence) {
+    /** A severity and the rule that produced it — the "why" the live trace shows. */
+    public record SeverityDecision(String severity, String reason) {
+    }
+
+    static SeverityDecision deriveSeverity(String detectedObject, Double confidence) {
         String object = detectedObject == null ? "" : detectedObject.trim().toLowerCase();
         double c = confidence == null ? 0d : confidence;
 
@@ -222,14 +252,17 @@ public class IncidentService {
         // The trained detector's classes are exactly knife and pistol, so this
         // omission would have mis-graded most real detections.
         if (CRITICAL_OBJECTS.contains(object)) {
-            return SEVERITY_CRITICAL;
+            return new SeverityDecision(SEVERITY_CRITICAL,
+                    "'" + object + "' is a high-risk class -> CRITICAL regardless of confidence");
         }
         if (object.equals("smoke") || object.equals("fall")) {
-            return c >= 85 ? SEVERITY_HIGH : "MEDIUM";
+            return c >= 85
+                    ? new SeverityDecision(SEVERITY_HIGH, "'" + object + "' at " + c + "% >= 85% -> HIGH")
+                    : new SeverityDecision("MEDIUM", "'" + object + "' at " + c + "% < 85% -> MEDIUM");
         }
-        if (c >= 90) return SEVERITY_HIGH;
-        if (c >= 70) return "MEDIUM";
-        return "LOW";
+        if (c >= 90) return new SeverityDecision(SEVERITY_HIGH, "confidence " + c + "% >= 90% -> HIGH");
+        if (c >= 70) return new SeverityDecision("MEDIUM", "confidence " + c + "% >= 70% -> MEDIUM");
+        return new SeverityDecision("LOW", "confidence " + c + "% < 70% -> LOW");
     }
 
     // ------------------------------------------------------------------------
@@ -240,16 +273,30 @@ public class IncidentService {
      * announce a change that could still roll back (MoSCoW M-03).
      */
     private void publishAfterCommit(String type, IncidentResponse incident) {
+        publishAfterCommit(type, Map.of("incident", incident));
+    }
+
+    private void publishAfterCommit(String type, Map<String, Object> body) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    socketHandler.broadcast(type, incident);
+                    socketHandler.broadcastEvent(type, body);
                 }
             });
         } else {
-            socketHandler.broadcast(type, incident);
+            socketHandler.broadcastEvent(type, body);
         }
+    }
+
+    /** A one-line operator action, so the live trace shows the human step too. */
+    private void operatorStep(String text, Long cameraId) {
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("cameraId", cameraId);
+        event.put("steps", List.of(text));
+        event.put("level", "ACTION");
+        event.put("at", Instant.now().toString());
+        publishAfterCommit("trace", event);
     }
 
     /** Joins camera context onto each incident with one query, not N. */

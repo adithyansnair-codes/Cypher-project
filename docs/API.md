@@ -168,9 +168,31 @@ One JSON object per event:
 |---|---|
 | `incident.created` | the AI engine (or a cockpit demo control) ingests a detection |
 | `incident.updated` | an operator acknowledges or resolves an incident |
+| `detection.trace` | a detection was ingested — carries the detector's own steps, the severity rule that fired, and the model / threshold / inference metadata |
+| `trace` | one line of reasoning from the AI engine (frame scanned, boxes collapsed, streak, cooldown) or an operator action |
 
 Events are emitted **after** the database transaction commits, so a change that
 rolls back is never announced.
+
+---
+
+### `POST /api/trace` — the pipeline's live reasoning
+
+The AI engine streams what it is doing and the gateway relays it to every open
+cockpit as a `trace` event, which is what the cockpit's **Live trace** view
+renders. Nothing is stored: this is a window onto the algorithm, not a record of
+it. Same roles as incident ingest.
+
+```json
+{ "cameraId": 1, "level": "BLOCKED",
+  "steps": [ "frame 12: knife 77%",
+             "streak knife: 3/8 -> holding, one frame is not evidence" ],
+  "model": "weapon_best.pt", "threshold": 0.35, "inferenceMs": 17.4 }
+```
+
+`202` with `{"deliveredTo": <cockpits>}`. Levels are `INFO`, `DECISION`,
+`BLOCKED` and `ACTION`; the engine throttles itself to one line every 1.5 s per
+camera, and always sends decisions.
 
 ---
 

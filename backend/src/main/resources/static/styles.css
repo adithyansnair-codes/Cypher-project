@@ -2699,6 +2699,46 @@ footer b {
 
 /* ------------------------------------------------------- algorithms -- */
 
+/* ------------------------------------------------------- live trace -- */
+
+.trace-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trace-status {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .04em;
+    color: var(--text-tertiary);
+}
+
+.trace-console {
+    margin: 0;
+    padding: 16px 18px;
+    max-height: 62vh;
+    overflow: auto;
+    border-radius: 14px;
+    background: #0c1217;
+    color: #cfe3ea;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.trace-line { display: block; }
+
+.trace-header { color: #7fd1e0; font-weight: 600; }
+.trace-critical { color: #ff8a9b; }
+.trace-high { color: #e8c07a; }
+.trace-blocked { color: #8b98a1; }
+.trace-action { color: #86e0b0; }
+.trace-decision { color: #9cc7ff; }
+.trace-info { color: #cfe3ea; }
+
 .algo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

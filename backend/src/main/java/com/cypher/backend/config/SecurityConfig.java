@@ -74,7 +74,7 @@ public class SecurityConfig {
 
                         // Detection ingest is machine-to-machine; the AI engine
                         // signs in with an operator-grade service account.
-                        .requestMatchers(HttpMethod.POST, "/api/incidents/ingest")
+                        .requestMatchers(HttpMethod.POST, "/api/incidents/ingest", "/api/trace")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER")
 
                         // Exports: the roles whose seeded permission set includes

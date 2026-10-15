@@ -71,21 +71,37 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
      *                 /api/incidents} returns, so a client needs no second call
      */
     public void broadcast(String type, IncidentResponse incident) {
+        broadcastEvent(type, Map.of("incident", incident));
+    }
+
+    /**
+     * Pushes an arbitrary event to every connected cockpit.
+     *
+     * <p>{@code body} is merged into the envelope, so
+     * {@code broadcastEvent("trace", Map.of("steps", ...))} arrives as
+     * {@code {"type": "trace", "steps": [...]}}.
+     *
+     * @return the number of cockpits the event reached
+     */
+    public int broadcastEvent(String type, Map<String, Object> body) {
         if (sessions.isEmpty()) {
-            return;
+            return 0;
         }
 
         final String payload;
         try {
-            payload = objectMapper.writeValueAsString(
-                    Map.of("type", type, "incident", incident));
+            Map<String, Object> envelope = new java.util.LinkedHashMap<>();
+            envelope.put("type", type);
+            envelope.putAll(body);
+            payload = objectMapper.writeValueAsString(envelope);
         } catch (Exception e) {
             // Serialising an event must never take the caller's work down.
             log.error("could not serialise a {} event: {}", type, e.getMessage());
-            return;
+            return 0;
         }
 
         TextMessage message = new TextMessage(payload);
+        int delivered = 0;
         for (WebSocketSession session : sessions) {
             if (!session.isOpen()) {
                 sessions.remove(session);
@@ -97,10 +113,12 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
                 synchronized (session) {
                     session.sendMessage(message);
                 }
+                delivered++;
             } catch (IOException | IllegalStateException e) {
                 log.warn("dropping cockpit socket {}: {}", session.getId(), e.getMessage());
                 sessions.remove(session);
             }
         }
+        return delivered;
     }
 }

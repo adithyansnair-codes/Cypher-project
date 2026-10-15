@@ -79,14 +79,26 @@ class GatewayClient:
         confidence: float,
         description: str | None = None,
         camera_id: int | None = None,
+        trace: list[str] | None = None,
+        model: str | None = None,
+        threshold: float | None = None,
+        inference_ms: float | None = None,
     ) -> dict[str, Any]:
-        """Submit a detection. The gateway derives CRITICAL for weapons/fire."""
+        """Submit a detection. The gateway derives CRITICAL for weapons/fire.
+
+        ``trace`` carries the reasoning that led here, so the cockpit can show
+        how the decision was reached and not only its outcome.
+        """
         payload = {
             "cameraId": camera_id if camera_id is not None else self.default_camera_id(),
             "title": title,
             "description": description,
             "detectedObject": detected_object,
             "confidence": confidence,
+            "trace": trace,
+            "model": model,
+            "threshold": threshold,
+            "inferenceMs": inference_ms,
         }
         response = requests.post(
             f"{settings.GATEWAY_URL}/api/incidents/ingest",
@@ -104,6 +116,38 @@ class GatewayClient:
             confidence,
         )
         return incident
+
+    # ----------------------------------------------------------------- trace
+    def post_trace(
+        self,
+        camera_id: int,
+        steps: list[str],
+        level: str = "INFO",
+        model: str | None = None,
+        threshold: float | None = None,
+        inference_ms: float | None = None,
+    ) -> None:
+        """Stream one line of reasoning to the cockpit's live trace.
+
+        Fire-and-forget on purpose: the trace is a window onto the algorithm,
+        and losing a line of it must never disturb the detection loop.
+        """
+        try:
+            requests.post(
+                f"{settings.GATEWAY_URL}/api/trace",
+                json={
+                    "cameraId": camera_id,
+                    "steps": steps,
+                    "level": level,
+                    "model": model,
+                    "threshold": threshold,
+                    "inferenceMs": inference_ms,
+                },
+                headers=self._auth_header(),
+                timeout=5,
+            )
+        except requests.RequestException as exc:
+            log.debug("trace dropped: %s", exc)
 
     # ----------------------------------------------------------------- health
     def healthy(self) -> bool:

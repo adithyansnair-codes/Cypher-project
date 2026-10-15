@@ -58,6 +58,11 @@
                     <span class="nav-count">07</span>
                 </button>
 
+                <button class="nav-item" data-view="trace">
+                    <span class="nav-icon">◎</span>
+                    <span>Live trace</span>
+                </button>
+
                 <button class="nav-item" data-view="analytics">
                     <span class="nav-icon">⌁</span>
                     <span>Analytics</span>
@@ -815,6 +820,37 @@
 ============================================================= -->
 
 <!-- =============================================================
+     LIVE TRACE OVERLAY
+     The algorithm's own reasoning, streamed as it runs.
+============================================================= -->
+
+<div class="audit-overlay" id="traceOverlay">
+
+    <div class="audit-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">PIPELINE</div>
+                <h3>Live trace</h3>
+                <p>What the system is doing right now, step by step.</p>
+            </div>
+
+            <div class="trace-controls">
+                <span class="trace-status" id="traceStatus">listening…</span>
+                <button class="audit-close" id="traceClear" type="button">Clear</button>
+                <button class="audit-close" id="traceClose" type="button">Close</button>
+            </div>
+
+        </div>
+
+        <pre class="trace-console" id="traceConsole"></pre>
+
+    </div>
+
+</div>
+
+<!-- =============================================================
      ALGORITHMS OVERLAY
      What runs, with the parameters we chose. Declared BEFORE the script.
 ============================================================= -->
@@ -1489,7 +1525,19 @@ function connectSocket() {
     socket.onmessage = event => {
         let payload;
         try { payload = JSON.parse(event.data); } catch (_) { return; }
-        if (!payload || !payload.incident) return;
+        if (!payload) return;
+
+        // Live trace: the algorithm's own reasoning, as it happens.
+        if (payload.type === "trace") {
+            appendTrace(payload.steps || [], payload.level || "INFO");
+            return;
+        }
+        if (payload.type === "detection.trace") {
+            appendDetectionTrace(payload);
+            return;
+        }
+
+        if (!payload.incident) return;
 
         if (payload.type === "incident.created") {
             const i = payload.incident;
@@ -1811,12 +1859,86 @@ function closeAlgorithms() {
 const algorithmsCloseButton = document.getElementById("algorithmsClose");
 if (algorithmsCloseButton) algorithmsCloseButton.addEventListener("click", () => showView("live"));
 
+/* --------------------------------------------------------- live trace -- */
+
+/* The algorithm, running. The AI engine streams its reasoning over
+   POST /api/trace (throttled to one line every 1.5 s per camera, decisions
+   always) and the gateway adds its own steps when an incident lands: the rule
+   that graded it, the stored procedure, the broadcast. Nothing here is
+   simulated - if the pipeline is quiet, this is quiet. */
+
+const traceOverlay = document.getElementById("traceOverlay");
+const traceConsole = document.getElementById("traceConsole");
+const traceStatus = document.getElementById("traceStatus");
+const TRACE_LINE_LIMIT = 400;
+let traceLineCount = 0;
+
+function openTrace() {
+    if (traceOverlay) traceOverlay.classList.add("visible");
+    renderTraceStatus();
+}
+
+function closeTrace() {
+    if (traceOverlay) traceOverlay.classList.remove("visible");
+}
+
+function renderTraceStatus() {
+    if (!traceStatus) return;
+    const live = socket && socket.readyState === 1;
+    traceStatus.textContent = (live ? "listening" : "channel down")
+        + " \u00b7 " + traceLineCount + " line(s)";
+}
+
+function appendTrace(lines, level) {
+    if (!traceConsole || !lines.length) return;
+    const stamp = new Date().toLocaleTimeString("en-GB", { hour12: false });
+    const block = document.createElement("span");
+    block.className = "trace-line trace-" + String(level || "info").toLowerCase();
+    block.textContent = lines.map(line => "[" + stamp + "] " + line).join("\n") + "\n";
+    traceConsole.appendChild(block);
+    while (traceConsole.childElementCount > TRACE_LINE_LIMIT) {
+        traceConsole.removeChild(traceConsole.firstChild);
+    }
+    traceLineCount += lines.length;
+    traceConsole.scrollTop = traceConsole.scrollHeight;
+    renderTraceStatus();
+}
+
+/** A complete decision, from the detector's boxes to the cockpit update. */
+function appendDetectionTrace(d) {
+    const level = d.severity === "CRITICAL" ? "critical" : (d.severity === "HIGH" ? "high" : "info");
+
+    appendTrace(["──────── incident #" + d.incidentId + " \u00b7 " + d.severity
+        + " \u00b7 " + (d.title || "")], "header");
+    appendTrace(["source: " + (d.source || "unknown")
+        + (d.model ? " \u00b7 model " + d.model : "")
+        + (d.threshold != null ? " \u00b7 threshold " + d.threshold : "")
+        + (d.inferenceMs != null ? " \u00b7 inference " + Math.round(d.inferenceMs) + " ms" : "")], "info");
+    (d.steps || []).forEach(step => appendTrace(["  " + step], "info"));
+    appendTrace(["severity rule \u2192 " + (d.rule || "supplied by the caller")], level);
+    appendTrace(["stored \u2192 incident + alert written by create_incident_with_alert() in one transaction"], "info");
+    appendTrace(["pushed \u2192 broadcast to every open cockpit after commit"], "info");
+}
+
+const traceCloseButton = document.getElementById("traceClose");
+if (traceCloseButton) traceCloseButton.addEventListener("click", () => showView("live"));
+
+const traceClearButton = document.getElementById("traceClear");
+if (traceClearButton) {
+    traceClearButton.addEventListener("click", () => {
+        if (traceConsole) traceConsole.innerHTML = "";
+        traceLineCount = 0;
+        renderTraceStatus();
+    });
+}
+
 /** Marks the nav item for a view active and closes every overlay. */
 function showView(view) {
     closeAudit();
     closeCameras();
     closeAnalytics();
     closeAlgorithms();
+    closeTrace();
     document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
     const target = document.querySelector('.nav-item[data-view="' + view + '"]');
     if (target) target.classList.add("active");
@@ -1963,6 +2085,8 @@ document.querySelectorAll(".nav-item").forEach(item => {
             openAnalytics();
         } else if (view === "algorithms") {
             openAlgorithms();
+        } else if (view === "trace") {
+            openTrace();
         }
     });
 });

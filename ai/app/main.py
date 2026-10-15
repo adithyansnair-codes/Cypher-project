@@ -62,6 +62,34 @@ _streak: dict[tuple[int, str], int] = defaultdict(int)
 # long enough to reject a one-frame false positive.
 CONFIRM_FRAMES = int(os.getenv("CONFIRM_FRAMES", "8"))
 
+# The live trace in the cockpit is throttled to this many seconds per camera:
+# reasoning is worth watching, but not 27 times a second. Decisions
+# (incidents, blocks) bypass the throttle because they are the interesting part.
+TRACE_MIN_INTERVAL = float(os.getenv("TRACE_MIN_INTERVAL", "1.5"))
+_last_trace: dict[int, float] = defaultdict(float)
+
+
+def _trace(
+    camera_id: int,
+    steps: list[str],
+    level: str = "INFO",
+    force: bool = False,
+    inference_ms: float | None = None,
+) -> None:
+    """Stream reasoning to the cockpit, throttled per camera."""
+    now = time.time()
+    if not force and (now - _last_trace[camera_id]) < TRACE_MIN_INTERVAL:
+        return
+    _last_trace[camera_id] = now
+    gateway.post_trace(
+        camera_id,
+        steps,
+        level=level,
+        model=Path(detector.weights).name if detector else None,
+        threshold=settings.CONFIDENCE,
+        inference_ms=inference_ms,
+    )
+
 
 @app.on_event("startup")
 def _startup() -> None:
@@ -110,7 +138,9 @@ async def monitor_frame(
     incident appears in the cockpit.
     """
     frame = await _read_upload(file)
+    started = time.perf_counter()
     found = detector.detect(frame)
+    inference_ms = (time.perf_counter() - started) * 1000
 
     raised: list[dict[str, Any]] = []
     skipped: list[str] = []
@@ -129,21 +159,48 @@ async def monitor_frame(
         log.info("collapsed %d duplicate detection(s) into %d object class(es)",
                  duplicates, len(best))
 
+    header = [
+        f"frame received: {frame.shape[1]}x{frame.shape[0]} px",
+        f"YOLO inference: {len(found)} box(es) in {inference_ms:.0f} ms "
+        f"at threshold {settings.CONFIDENCE:.2f}",
+    ]
+    for label, det in best.items():
+        header.append(
+            f"detection: {label} {det['confidence']:.1f}% "
+            f"box {det['box']}"
+        )
+    if duplicates > 0:
+        header.append(
+            f"dedupe: {duplicates} overlapping box(es) collapsed -> "
+            f"{len(best)} object class(es)"
+        )
+
     for label, det in best.items():
         cid = camera_id or gateway.default_camera_id()
         _streak[(cid, label)] += 1
 
         if _streak[(cid, label)] < CONFIRM_FRAMES:
             skipped.append(f"{label} (needs {CONFIRM_FRAMES} frames, has {_streak[(cid, label)]})")
+            _trace(cid, header + [
+                f"streak: {label} {_streak[(cid, label)]}/{CONFIRM_FRAMES} "
+                f"-> holding, one frame is not evidence"
+            ], level="BLOCKED")
             continue
         if _on_cooldown(cid, label):
             skipped.append(f"{label} (cooldown)")
+            _trace(cid, header + [
+                f"cooldown: {label} already raised within {settings.COOLDOWN_SECONDS}s "
+                f"-> suppressed"
+            ], level="BLOCKED", force=True)
             continue
 
         # Only weapons and fire are worth waking an operator for from vision
         # alone; the gateway decides the severity.
         if not _is_reportable(label):
             skipped.append(f"{label} (not reportable)")
+            _trace(cid, header + [
+                f"policy: {label} is not on the reportable list -> not an incident"
+            ], level="BLOCKED", force=True)
             continue
 
         try:
@@ -156,6 +213,13 @@ async def monitor_frame(
                     f"{det['confidence']:.1f}% confidence."
                 ),
                 camera_id=cid,
+                trace=header + [
+                    f"streak: {label} confirmed on {CONFIRM_FRAMES} consecutive frames",
+                    f"decision: report {label} to the gateway for priority grading",
+                ],
+                model=Path(detector.weights).name,
+                threshold=settings.CONFIDENCE,
+                inference_ms=round(inference_ms, 1),
             )
             _last_raised[(cid, label)] = time.time()
             raised.append(incident)
@@ -203,7 +267,9 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                 break
             frames += 1
 
+            frame_started = time.perf_counter()
             detections = detector.detect(frame)
+            inference_ms = (time.perf_counter() - frame_started) * 1000
             labels_this_frame = {str(d["label"]).lower() for d in detections}
             best_this_frame: dict[str, float] = {}
             for d in detections:
@@ -220,6 +286,22 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
             for label in labels_this_frame:
                 _streak[(cid, label)] += 1
 
+            observed = ", ".join(
+                f"{name} {conf:.0f}%" for name, conf in sorted(best_this_frame.items())
+            ) or "nothing above threshold"
+            _trace(
+                cid,
+                [
+                    f"frame {frames}: {observed}",
+                    f"inference {inference_ms:.0f} ms, {len(detections)} box(es)",
+                    *[
+                        f"streak {name}: {_streak[(cid, name)]}/{CONFIRM_FRAMES}"
+                        for name in sorted(labels_this_frame)
+                    ],
+                ],
+                inference_ms=round(inference_ms, 1),
+            )
+
             for label, confidence in best_this_frame.items():
                 if not _is_reportable(label) or _on_cooldown(cid, label):
                     continue
@@ -234,6 +316,14 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                         confidence=confidence,
                         description=f"{label} detected in a video stream.",
                         camera_id=cid,
+                        trace=[
+                            f"frame {frames}: {label} {confidence:.0f}%",
+                            f"streak: confirmed on {CONFIRM_FRAMES} consecutive frames "
+                            f"-> reporting to the gateway for priority grading",
+                        ],
+                        model=Path(detector.weights).name,
+                        threshold=settings.CONFIDENCE,
+                        inference_ms=round(inference_ms, 1),
                     )
                     _last_raised[(cid, label)] = time.time()
                     reported.add(label)

@@ -64,6 +64,7 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - Audit trail of every incident change (MoSCoW S-06)
 - Camera and project administration (MoSCoW S-07)
 - Analytics view: incident trend, severity split, detection totals
+- Live trace: the detection pipeline's reasoning, streamed to the cockpit as it runs
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 

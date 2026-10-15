@@ -34,6 +34,26 @@ public class IncidentIngestRequest {
     /** Optional 0-100 confidence from the model. */
     private Double confidence;
 
+    // ---------------------------------------------------------------------
+    // Optional detection context, so the cockpit can show the reasoning that
+    // produced this incident rather than only its outcome (the live trace).
+    // ---------------------------------------------------------------------
+
+    /** Steps the detector took, in order, with their real values. */
+    private java.util.List<String> trace;
+
+    /** Weights file, e.g. weapon_best.pt. */
+    private String model;
+
+    /** Confidence threshold the detector was running with. */
+    private Double threshold;
+
+    /** Inference time for the frame, in milliseconds. */
+    private Double inferenceMs;
+
+    /** Where the frame came from: a camera index, file or stream URL. */
+    private String source;
+
     public Long getCameraId() {
         return cameraId;
     }
@@ -80,5 +100,45 @@ public class IncidentIngestRequest {
 
     public void setConfidence(Double confidence) {
         this.confidence = confidence;
+    }
+
+    public java.util.List<String> getTrace() {
+        return trace;
+    }
+
+    public void setTrace(java.util.List<String> trace) {
+        this.trace = trace;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public Double getThreshold() {
+        return threshold;
+    }
+
+    public void setThreshold(Double threshold) {
+        this.threshold = threshold;
+    }
+
+    public Double getInferenceMs() {
+        return inferenceMs;
+    }
+
+    public void setInferenceMs(Double inferenceMs) {
+        this.inferenceMs = inferenceMs;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 }
