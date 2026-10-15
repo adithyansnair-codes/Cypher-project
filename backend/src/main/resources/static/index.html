@@ -838,6 +838,8 @@
 
             <div class="trace-controls">
                 <span class="trace-status" id="traceStatus">listening…</span>
+                <button class="audit-close" id="traceHealth" type="button">Health event</button>
+                <button class="audit-close" id="traceThreat" type="button">Simulate threat</button>
                 <button class="audit-close" id="traceClear" type="button">Clear</button>
                 <button class="audit-close" id="traceClose" type="button">Close</button>
             </div>
@@ -1931,6 +1933,14 @@ if (traceClearButton) {
         renderTraceStatus();
     });
 }
+
+/* The demo controls live here too: the trace view is where you want to trigger
+   something and watch it happen, and the panel covers the main buttons. */
+const traceThreatButton = document.getElementById("traceThreat");
+if (traceThreatButton) traceThreatButton.addEventListener("click", () => injectDemo("THREAT"));
+
+const traceHealthButton = document.getElementById("traceHealth");
+if (traceHealthButton) traceHealthButton.addEventListener("click", () => injectDemo("HEALTH"));
 
 /** Marks the nav item for a view active and closes every overlay. */
 function showView(view) {
