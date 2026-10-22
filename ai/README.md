@@ -55,6 +55,36 @@ prototype, not a production detector.
 | POST | `/monitor/frame` | detect **and raise incidents** for what it finds |
 | POST | `/monitor/stream` | bounded run over a video file or camera index |
 
+## Terminal pipeline (no browser needed)
+
+`ai/cli.py` runs the trained model on one image, a video, the Mac webcam, or the
+ESP32-CAM's MJPEG stream, prints every decision, and posts incidents to the
+gateway so they appear in the cockpit.
+
+```bash
+cd ~/CYPHER/.dsh-scratch/work
+
+# safe test: detect, never post
+~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py --source photo.jpg --dry-run
+
+# photo -> real incident in the cockpit
+~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py --source photo.jpg --camera-id 1
+
+# live Mac webcam
+~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py --source 0 --seconds 30
+
+# ESP32-CAM (Mac connected to CYPHER-CAM)
+~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py \
+  --source http://192.168.4.1:81/stream --seconds 60
+```
+
+It defaults to the six-class model (`knife, pistol, person, fire, smoke,
+lying`). Useful flags: `--weights`, `--conf`, `--imgsz`, `--confirm`,
+`--cooldown`, `--stride`, `--save <dir>` for annotated frames, and `--gateway`.
+
+The gateway (`http://localhost:8081`) must be running; the CLI talks to it
+directly, so the FastAPI service is not needed for terminal use.
+
 ## Run
 
 ```bash

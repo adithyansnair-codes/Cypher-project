@@ -361,4 +361,6 @@ def _on_cooldown(camera_id: int, label: str) -> bool:
 
 
 def _is_reportable(label: str) -> bool:
-    return label in settings.CRITICAL_CLASSES or label in {"smoke", "fall", "person"}
+    # "lying" is the class the six-class model produces for a fallen person;
+    # the platform's health rule treats it like "fall".
+    return label in settings.CRITICAL_CLASSES or label in {"smoke", "fall", "person", "lying"}

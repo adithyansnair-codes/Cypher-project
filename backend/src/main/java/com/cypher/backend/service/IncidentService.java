@@ -255,7 +255,7 @@ public class IncidentService {
             return new SeverityDecision(SEVERITY_CRITICAL,
                     "'" + object + "' is a high-risk class -> CRITICAL regardless of confidence");
         }
-        if (object.equals("smoke") || object.equals("fall")) {
+        if (object.equals("smoke") || object.equals("fall") || object.equals("lying")) {
             return c >= 85
                     ? new SeverityDecision(SEVERITY_HIGH, "'" + object + "' at " + c + "% >= 85% -> HIGH")
                     : new SeverityDecision("MEDIUM", "'" + object + "' at " + c + "% < 85% -> MEDIUM");

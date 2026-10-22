@@ -31,7 +31,7 @@ from pathlib import Path
 import pyarrow.parquet as pq
 from PIL import Image
 
-CLASSES = ["knife", "pistol", "person", "fire", "smoke"]
+CLASSES = ["knife", "pistol", "person", "fire", "smoke", "lying"]
 
 GUNS_KNIVES = Path("/Users/adithyansnair/Downloads/archive (3)/guns-knives-yolo/guns-knives-yolo")
 HF_ROOT = Path("/Users/adithyansnair/CYPHER/.dsh-scratch/datasets/hf")
@@ -42,7 +42,18 @@ OUT = Path("/Users/adithyansnair/CYPHER/.dsh-scratch/datasets/cypher-v2")
 
 # Subh775 category index -> our class index
 WEAPON_GROUPED_MAP = {0: 1, 1: 0, 2: 2}   # GUN->pistol, KNIFE->knife, PERSON->person
-VOC_MAP = {"fire": 3, "smoke": 4}
+VOC_MAP = {"fire": 3, "flame": 3, "smoke": 4}   # DBA labels the fire class "flame"
+
+SIMULETIC_MAP = {0: 5, 1: 2}                    # laying -> lying, standing -> person
+
+
+def link_or_copy(source: Path, destination: Path) -> None:
+    """Hardlink when possible: the merged set would otherwise duplicate gigabytes."""
+    try:
+        destination.unlink(missing_ok=True)
+        destination.hardlink_to(source)
+    except OSError:
+        shutil.copy(source, destination)
 
 
 def fresh_dir(path: Path) -> None:
@@ -196,6 +207,84 @@ def add_dba_fire_smoke(stats: Counter) -> None:
         write_label(OUT / "labels" / split_out / (Path(name).stem + ".txt"), rows)
 
 
+def add_simuletic_fall(stats: Counter) -> None:
+    """YOLO-pose labels: the first five fields are already a box label."""
+    root = HF_ROOT / "simuletic_fall" / "laying_dataset"
+    for image in sorted((root / "images").glob("*")):
+        label = root / "labels" / (image.stem + ".txt")
+        if not label.exists():
+            continue
+
+        rows = []
+        for line in label.read_text().splitlines():
+            parts = line.split()
+            if len(parts) < 5:
+                continue
+            our_class = SIMULETIC_MAP.get(int(float(parts[0])))
+            if our_class is None:
+                continue
+            rows.append(f"{our_class} {parts[1]} {parts[2]} {parts[3]} {parts[4]}")
+            stats["train" if not _is_val(image.stem) else "val"][CLASSES[our_class]] += 1
+        if not rows:
+            continue
+
+        split_out = "val" if _is_val(image.stem) else "train"
+        name = "fall_" + image.name
+        link_or_copy(image, OUT / "images" / split_out / name)
+        write_label(OUT / "labels" / split_out / (Path(name).stem + ".txt"), rows)
+
+
+def add_crowdhuman(stats: Counter) -> None:
+    """CrowdHuman val split: ~4.4k high-resolution images, ~99k person boxes.
+
+    The odgt gives fbox (full body, including occluded parts) and vbox (visible
+    part). Detection training wants the full body, so fbox it is.
+    """
+    import json
+    import zipfile
+
+    root = HF_ROOT / "crowdhuman_val"
+    images_dir = root / "Images"
+    if len(list(images_dir.glob("*.jpg"))) < 3000:
+        print("    extracting CrowdHuman_val.zip (2.5 GB)...", flush=True)
+        with zipfile.ZipFile(root / "CrowdHuman_val.zip") as archive:
+            archive.extractall(root)
+
+    annotations: dict[str, list] = {}
+    for line in (root / "annotation_val.odgt").read_text().splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        annotations[record["ID"]] = record.get("gtboxes") or []
+
+    for image in sorted(images_dir.glob("*.jpg")):
+        boxes = annotations.get(image.stem)
+        if not boxes:
+            continue
+
+        with Image.open(image) as im:
+            width, height = im.size
+
+        split_out = "val" if _is_val(image.stem) else "train"
+        rows = []
+        for box in boxes:
+            if box.get("tag") != "person":
+                continue                       # masks and ignore regions
+            x, y, w, h = box["fbox"]
+            normalised = normalise((x, y, w, h), width, height)
+            if normalised is None:
+                continue
+            cx, cy, nw, nh = normalised
+            rows.append(f"2 {cx:.6f} {cy:.6f} {nw:.6f} {nh:.6f}")
+            stats[split_out]["person"] += 1
+        if not rows:
+            continue
+
+        name = "ch_" + image.name
+        link_or_copy(image, OUT / "images" / split_out / name)
+        write_label(OUT / "labels" / split_out / (Path(name).stem + ".txt"), rows)
+
+
 def _is_val(stem: str) -> bool:
     digest = hashlib.sha256(stem.encode()).hexdigest()
     return int(digest[:8], 16) % 10 == 0
@@ -206,7 +295,7 @@ def write_yaml() -> None:
     (OUT / "data.yaml").write_text(
         f"path: {OUT}\ntrain: images/train\nval: images/val\nnc: {len(CLASSES)}\nnames:\n{names}\n")
     (OUT / "data-test.yaml").write_text(
-        f"path: {OUT / 'test'}\ntrain: images/val\nval: images/val\n"
+        f"path: {OUT / 'test'}\ntrain: images\nval: images\n"
         f"nc: {len(CLASSES)}\nnames:\n{names}\n")
 
 
@@ -226,6 +315,16 @@ def main() -> None:
         add_dba_fire_smoke(stats)
     else:
         print("!! dba fire/smoke not downloaded yet, skipping", flush=True)
+    if (HF_ROOT / "simuletic_fall").exists():
+        print("==> simuletic fall (lying)", flush=True)
+        add_simuletic_fall(stats)
+    else:
+        print("!! simuletic fall not downloaded yet, skipping", flush=True)
+    if (HF_ROOT / "crowdhuman_val" / "CrowdHuman_val.zip").exists():
+        print("==> crowdhuman val (person)", flush=True)
+        add_crowdhuman(stats)
+    else:
+        print("!! crowdhuman not downloaded yet, skipping", flush=True)
 
     write_yaml()
     report = {

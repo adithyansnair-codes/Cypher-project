@@ -42,12 +42,15 @@ def main() -> None:
                             plots=True, project=str(out), name=label, exist_ok=True)
 
         per_class = {}
-        for index, name in metrics.names.items():
+        # ap_class_index lists the classes that actually have ground truth in
+        # this split; metrics arrays are sized to that, not to len(names).
+        for position, class_index in enumerate(metrics.box.ap_class_index):
+            name = metrics.names[int(class_index)]
             per_class[name] = {
-                "precision": round(float(metrics.box.p[index]), 4),
-                "recall": round(float(metrics.box.r[index]), 4),
-                "ap50": round(float(metrics.box.ap50[index]), 4),
-                "ap50_95": round(float(metrics.box.ap[index]), 4),
+                "precision": round(float(metrics.box.p[position]), 4),
+                "recall": round(float(metrics.box.r[position]), 4),
+                "ap50": round(float(metrics.box.ap50[position]), 4),
+                "ap50_95": round(float(metrics.box.ap[position]), 4),
             }
 
         summary[label] = {

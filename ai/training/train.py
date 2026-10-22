@@ -18,6 +18,7 @@ Weights land in .dsh-scratch/training/runs/<name>/weights/best.pt
 """
 from __future__ import annotations
 
+import argparse
 import os
 import time
 from pathlib import Path
@@ -40,6 +41,19 @@ SAVE_EVERY = 5        # a usable checkpoint even if the run is interrupted
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base", default=str(BASE_WEIGHTS),
+                        help="starting weights (COCO yolov8s, or a previous run's checkpoint)")
+    parser.add_argument("--name", default=RUN_NAME)
+    parser.add_argument("--epochs", type=int, default=EPOCHS)
+    parser.add_argument("--imgsz", type=int, default=IMGSZ,
+                        help="640 for the first runs; 800 helps small objects on a 720p camera")
+    parser.add_argument("--batch", type=int, default=BATCH)
+    parser.add_argument("--lr0", type=float, default=0.01,
+                        help="starting LR; use ~0.003 when continuing from a trained checkpoint")
+    parser.add_argument("--patience", type=int, default=PATIENCE)
+    args = parser.parse_args()
+
     if not DATASET.exists():
         raise SystemExit(f"dataset not built yet: {DATASET}\nrun ai/training/to_yolo.py first")
 
@@ -48,17 +62,18 @@ def main() -> None:
     # download failed. Absolute paths and a writable cwd fix that.
     RUNS.mkdir(parents=True, exist_ok=True)
     os.chdir(RUNS)
-    model = YOLO(str(BASE_WEIGHTS))     # transfer learning from COCO
+    model = YOLO(args.base)             # transfer learning
     started = time.time()
-    print(f"training {RUN_NAME}: {EPOCHS} epochs, imgsz={IMGSZ}, batch={BATCH}, device=mps",
-          flush=True)
+    print(f"training {args.name} from {args.base}: {args.epochs} epochs, "
+          f"imgsz={args.imgsz}, batch={args.batch}, lr0={args.lr0}, device=mps", flush=True)
 
     model.train(
         data=str(DATASET),
-        epochs=EPOCHS,
-        imgsz=IMGSZ,
-        batch=BATCH,
-        patience=PATIENCE,
+        epochs=args.epochs,
+        imgsz=args.imgsz,
+        batch=args.batch,
+        patience=args.patience,
+        lr0=args.lr0,
         device="mps",
         workers=8,
         amp=False,                      # not supported on MPS
@@ -70,13 +85,13 @@ def main() -> None:
         val=True,
         plots=True,
         project=str(RUNS),
-        name=RUN_NAME,
+        name=args.name,
         exist_ok=True,
         verbose=True,
     )
 
     print(f"\nDONE in {(time.time() - started) / 60:.1f} min", flush=True)
-    best = RUNS / RUN_NAME / "weights" / "best.pt"
+    best = RUNS / args.name / "weights" / "best.pt"
     print(f"best weights: {best}", flush=True)
 
 
