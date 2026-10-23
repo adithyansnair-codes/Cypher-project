@@ -2060,13 +2060,10 @@ if (algorithmsCloseButton) algorithmsCloseButton.addEventListener("click", () =>
 
 /* ------------------------------------------------------ browser ML demo -- */
 
-/* The browser talks only to the local inference process. On the local cockpit
-   that process reports to the local gateway; on the AWS cockpit the companion
-   demo process on port 5002 reports to AWS. The page itself owns the workflow,
-   so no terminal is needed during the presentation. */
-const ML_ENGINE = ["localhost", "127.0.0.1"].includes(location.hostname)
-    ? "http://127.0.0.1:5000"
-    : "http://127.0.0.1:5002";
+/* Inference stays on the Mac; the browser sends only detection metadata to the
+   gateway that served this page. That works for the local cockpit and for the
+   AWS cockpit through code-server's authenticated /proxy/8081/ path. */
+const ML_ENGINE = "http://127.0.0.1:5000";
 
 const mlDemoOverlay = document.getElementById("mlDemoOverlay");
 const mlDemoRun = document.getElementById("mlDemoRun");
@@ -2185,6 +2182,7 @@ function stopMlWebcam() {
         mlWebcamPreview.srcObject = null;
         mlWebcamPreview.hidden = true;
     }
+    if (mlCaptureCanvas) mlCaptureCanvas.hidden = true;
     if (mlWebcamStart) mlWebcamStart.hidden = false;
     if (mlWebcamStop) mlWebcamStop.hidden = true;
     if (!mlSelectedFile && mlDemoPreview) {
@@ -2211,6 +2209,7 @@ async function startMlWebcam() {
         mlWebcamPreview.srcObject = mlWebcamStream;
         mlWebcamPreview.hidden = false;
         mlDemoPreview.hidden = true;
+        mlCaptureCanvas.hidden = true;
         mlPreviewLabel.textContent = "Mac webcam · live";
         mlWebcamStart.hidden = true;
         mlWebcamStop.hidden = false;
@@ -2242,6 +2241,53 @@ async function captureWebcamBlob() {
     });
 }
 
+async function drawDetectionResult(blob, detections) {
+    if (!blob || !mlCaptureCanvas) return;
+
+    const bitmap = await createImageBitmap(blob);
+    mlCaptureCanvas.width = bitmap.width;
+    mlCaptureCanvas.height = bitmap.height;
+    const context = mlCaptureCanvas.getContext("2d");
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    const unique = bestDetectionsByClass(detections);
+    const lineWidth = Math.max(3, Math.round(mlCaptureCanvas.width / 260));
+    const fontSize = Math.max(13, Math.round(mlCaptureCanvas.width / 42));
+    context.lineWidth = lineWidth;
+    context.font = "600 " + fontSize + "px DM Mono, monospace";
+    context.textBaseline = "top";
+
+    unique.forEach(detection => {
+        const box = detection.box || [];
+        if (box.length !== 4) return;
+        const color = ["knife", "pistol", "fire"].includes(detection.label)
+            ? "#ff3b55"
+            : ["smoke", "lying", "fall"].includes(detection.label)
+                ? "#e1a72f"
+                : "#159daf";
+        const [x1, y1, x2, y2] = box.map(Number);
+        context.strokeStyle = color;
+        context.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        const label = detection.label.toUpperCase() + "  "
+            + Number(detection.confidence).toFixed(1) + "%";
+        const textWidth = context.measureText(label).width;
+        const labelY = Math.max(0, y1 - fontSize - 8);
+        context.fillStyle = color;
+        context.fillRect(x1, labelY, textWidth + 14, fontSize + 8);
+        context.fillStyle = "#ffffff";
+        context.fillText(label, x1 + 7, labelY + 4);
+    });
+
+    mlDemoPreview.hidden = true;
+    mlWebcamPreview.hidden = true;
+    mlCaptureCanvas.hidden = false;
+    mlPreviewLabel.textContent = unique.length
+        ? "Detected: " + unique.map(d => d.label + " "
+            + Number(d.confidence).toFixed(1) + "%").join(", ")
+        : "Captured frame · no detection";
+}
+
 if (mlDemoFile) {
     mlDemoFile.addEventListener("change", () => {
         const file = mlDemoFile.files && mlDemoFile.files[0];
@@ -2253,6 +2299,7 @@ if (mlDemoFile) {
         mlPreviewUrl = URL.createObjectURL(file);
         mlDemoPreview.src = mlPreviewUrl;
         mlDemoPreview.hidden = false;
+        mlCaptureCanvas.hidden = true;
         mlPreviewLabel.textContent = file.name;
         mlDemoResult.hidden = true;
         mlRaiseIncident.hidden = true;
@@ -2279,6 +2326,7 @@ if (mlDemoReset) {
         if (mlPreviewUrl) URL.revokeObjectURL(mlPreviewUrl);
         mlPreviewUrl = null;
         mlDemoPreview.removeAttribute("src");
+        mlCaptureCanvas.hidden = true;
         mlDemoProgress.value = 0;
         mlProgressText.textContent = "0 / 8 frames";
         mlDemoLog.textContent = "Select an image or start the webcam to begin.";
@@ -2356,6 +2404,7 @@ if (mlDemoRun) {
                 return;
             }
 
+            await drawDetectionResult(mlAnalyzedBlob, detections);
             if (detections.length) {
                 mlRaiseIncident.hidden = false;
                 mlDemoLog.textContent += "\nReview the result, then confirm it if you want an incident.";
@@ -2384,35 +2433,75 @@ if (mlRaiseIncident) {
         mlProgressText.textContent = "0 / 8 frames";
 
         try {
-            await fetch(ML_ENGINE + "/demo/reset?camera_id=" + encodeURIComponent(cameraId),
-                        { method: "POST" });
-            let incident = null;
-            let lastDetections = [];
+            const streak = {};
+            const best = {};
+            const traceSteps = [];
+            let confirmedLabel = null;
 
             for (let frame = 1; frame <= 8; frame += 1) {
+                const frameBlob = mlWebcamStream
+                    ? await captureWebcamBlob()
+                    : mlAnalyzedBlob;
                 const form = new FormData();
-                form.append("file", mlAnalyzedBlob, mlAnalyzedName);
-                const response = await fetch(
-                    ML_ENGINE + "/monitor/frame?camera_id=" + encodeURIComponent(cameraId),
-                    { method: "POST", body: form }
-                );
+                form.append("file", frameBlob, mlAnalyzedName);
+                const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form });
                 if (!response.ok) throw new Error("Inference failed with status " + response.status);
                 const result = await response.json();
-                lastDetections = result.detections || [];
-                const skipped = (result.skipped || []).join("; ");
-                setMlProgress(frame, "Frame " + frame + "/8 · " + describeDetections(lastDetections)
-                    + (skipped ? " · " + skipped : " · incident created"));
-                if (result.incidents_raised && result.incidents_raised.length) {
-                    incident = result.incidents_raised[0];
+                const frameDetections = result.detections || [];
+                const unique = bestDetectionsByClass(frameDetections);
+                const present = new Set(unique.map(detection => detection.label));
+
+                Object.keys(streak).forEach(label => {
+                    if (!present.has(label)) streak[label] = 0;
+                });
+                unique.forEach(detection => {
+                    const label = detection.label;
+                    streak[label] = (streak[label] || 0) + 1;
+                    if (!best[label] || Number(detection.confidence) > Number(best[label].confidence)) {
+                        best[label] = detection;
+                    }
+                    if (streak[label] >= 8) confirmedLabel = label;
+                });
+
+                const summary = describeDetections(frameDetections);
+                traceSteps.push("browser frame " + frame + "/8: " + summary);
+                setMlProgress(frame, "Frame " + frame + "/8 · " + summary
+                    + (confirmedLabel ? " · confirmed" : " · holding"));
+                if (confirmedLabel) {
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 120));
             }
 
-            if (!incident) throw new Error("No incident was created");
-            const confidence = lastDetections.length
-                ? Math.max(...lastDetections.map(d => Number(d.confidence) || 0))
-                : 0;
+            if (!confirmedLabel) {
+                throw new Error("The object was not detected for eight consecutive frames. "
+                    + "Hold it steady, fill more of the frame and try again.");
+            }
+
+            const detection = best[confirmedLabel];
+            const confidence = Number(detection.confidence);
+            const incident = await api("/api/incidents/ingest", {
+                method: "POST",
+                body: JSON.stringify({
+                    cameraId: Number(cameraId),
+                    title: confirmedLabel.charAt(0).toUpperCase()
+                        + confirmedLabel.slice(1) + " detected",
+                    description: confirmedLabel + " confirmed from the CYPHER "
+                        + (mlWebcamStream ? "Mac webcam" : "image analysis workspace")
+                        + " at " + confidence.toFixed(1) + "% confidence.",
+                    detectedObject: confirmedLabel,
+                    confidence,
+                    boundingBox: detection.box,
+                    model: "best.pt",
+                    threshold: 0.35,
+                    source: mlWebcamStream ? "Mac webcam" : mlAnalyzedName,
+                    trace: traceSteps.concat([
+                        "browser: object present in 8 consecutive frames",
+                        "decision: submit to the gateway for severity grading"
+                    ])
+                })
+            });
+
             document.getElementById("mlResultTitle").textContent =
                 incident.title + " · incident #" + incident.incidentId;
             document.getElementById("mlResultSeverity").textContent = incident.severity;
