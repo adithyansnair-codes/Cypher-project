@@ -28,6 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<!-- Fix CVE-2026-54291 (SCRAM channel-binding downgrade). -->
+		<postgresql.version>42.7.12</postgresql.version>
 	</properties>
 	<dependencies>
 <dependency>
