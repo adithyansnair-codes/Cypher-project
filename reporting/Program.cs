@@ -5,7 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Loopback only: the Spring Boot gateway is the single public surface and
 // proxies /api/reports/** here, so this service never needs to be exposed.
 var port = Environment.GetEnvironmentVariable("REPORTING_PORT") ?? "5001";
-builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
+var host = Environment.GetEnvironmentVariable("REPORTING_HOST") ?? "127.0.0.1";
+builder.WebHost.UseUrls($"http://{host}:{port}");
 
 // QuestPDF's community licence covers this project. Without this line the
 // library refuses to render at all.
