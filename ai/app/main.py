@@ -24,6 +24,7 @@ from typing import Any
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import settings
@@ -40,6 +41,26 @@ app = FastAPI(
     title="CYPHER AI Engine",
     description="Computer-vision incident detection for the CYPHER platform",
     version="1.0.0",
+)
+
+# The cockpit is served by the Spring gateway on 8081, while inference is a
+# separate FastAPI process on 5000. The browser therefore makes a cross-origin
+# request. Keep the allow-list to the local cockpit and the deployed cockpit.
+AI_CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "AI_CORS_ORIGINS",
+        "http://localhost:8081,http://127.0.0.1:8081,"
+        "http://13.207.55.75:8081,http://13.207.55.75:8080",
+    ).split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=AI_CORS_ORIGINS,
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 detector: Detector | None = None
@@ -67,6 +88,23 @@ CONFIRM_FRAMES = int(os.getenv("CONFIRM_FRAMES", "8"))
 # (incidents, blocks) bypass the throttle because they are the interesting part.
 TRACE_MIN_INTERVAL = float(os.getenv("TRACE_MIN_INTERVAL", "1.5"))
 _last_trace: dict[int, float] = defaultdict(float)
+
+
+@app.post("/demo/reset")
+def reset_demo(camera_id: int | None = None) -> dict[str, Any]:
+    """Clear only the in-memory streak/cooldown state before a repeatable demo.
+
+    This is deliberately an explicit demo control. It does not touch the
+    database; it only forgets transient frame counters in this AI process.
+    """
+    for state in (_streak, _last_raised):
+        keys = [
+            key for key in list(state)
+            if camera_id is None or key[0] == camera_id
+        ]
+        for key in keys:
+            state.pop(key, None)
+    return {"status": "reset", "cameraId": camera_id}
 
 
 def _trace(

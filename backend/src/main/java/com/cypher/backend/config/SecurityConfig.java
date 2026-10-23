@@ -47,7 +47,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/index.html", "/styles.css",
                                 "/favicon.ico", "/manifest.json",
-                                "/*.js", "/*.css", "/*.png", "/*.svg").permitAll()
+                                "/*.js", "/*.css", "/*.png", "/*.svg",
+                                "/ml-demo/**").permitAll()
 
                         // Public: liveness probe.
                         .requestMatchers("/health").permitAll()

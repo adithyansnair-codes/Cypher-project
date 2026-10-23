@@ -63,6 +63,11 @@
                     <span>Live trace</span>
                 </button>
 
+                <button class="nav-item nav-item-demo" data-view="ml-demo">
+                    <span class="nav-icon">◉</span>
+                    <span>Live detection</span>
+                </button>
+
                 <button class="nav-item" data-view="analytics">
                     <span class="nav-icon">⌁</span>
                     <span>Analytics</span>
@@ -847,6 +852,166 @@
         </div>
 
         <pre class="trace-console" id="traceConsole"></pre>
+
+    </div>
+
+</div>
+
+<!-- =============================================================
+     ML DEMONSTRATION OVERLAY
+     Everything the ML presentation needs, without a terminal.
+============================================================= -->
+
+<div class="audit-overlay" id="mlDemoOverlay">
+
+    <div class="audit-panel ml-demo-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">MODEL INFERENCE</div>
+                <h3>Live detection workspace</h3>
+                <p>Choose an image, run the trained model and inspect the measured evidence.</p>
+            </div>
+
+            <button class="audit-close" id="mlDemoClose" type="button">
+                Close
+            </button>
+
+        </div>
+
+        <div class="ml-demo-grid">
+
+            <section class="ml-run-card">
+                <div class="eyebrow">LIVE INFERENCE</div>
+                <h4>Analyze an image yourself</h4>
+                <p class="ml-demo-lead">
+                    Choose an image from your Mac. Analysis has no side effects; an
+                    incident is created only after you explicitly confirm the result.
+                </p>
+
+                <div class="ml-preview">
+                    <img id="mlDemoPreview" alt="Selected image preview">
+                    <video id="mlWebcamPreview" autoplay muted playsinline hidden></video>
+                    <canvas id="mlCaptureCanvas" hidden></canvas>
+                    <span id="mlPreviewLabel">No image selected</span>
+                </div>
+
+                <div class="ml-controls">
+                    <label>
+                        Camera
+                        <select id="mlDemoCamera">
+                            <option value="1">Loading cameras…</option>
+                        </select>
+                    </label>
+                    <label class="ml-file-button">
+                        Choose another image
+                        <input id="mlDemoFile" type="file" accept="image/*">
+                    </label>
+                    <button class="audit-close" id="mlWebcamStart" type="button">
+                        Start Mac webcam
+                    </button>
+                    <button class="audit-close" id="mlWebcamStop" type="button" hidden>
+                        Stop webcam
+                    </button>
+                </div>
+
+                <div class="ml-run-actions">
+                    <button class="button primary" id="mlDemoRun" type="button">
+                        Analyze selected image
+                    </button>
+                    <button class="audit-close" id="mlDemoReset" type="button">
+                        Clear
+                    </button>
+                </div>
+
+                <button class="button secondary ml-confirm-button" id="mlRaiseIncident"
+                        type="button" hidden>
+                    Confirm detection and raise incident
+                </button>
+
+                <div class="ml-engine-state">
+                    <span class="status-dot pending" id="mlEngineDot"></span>
+                    <span id="mlEngineStatus">Checking the local AI engine…</span>
+                </div>
+
+                <div class="ml-progress-wrap">
+                    <div class="ml-progress-label">
+                        <span>Confirmation progress</span>
+                        <strong id="mlProgressText">0 / 8 frames</strong>
+                    </div>
+                    <progress id="mlDemoProgress" max="8" value="0"></progress>
+                </div>
+
+                <div class="ml-demo-log" id="mlDemoLog" aria-live="polite">
+                    Select an image to start the model.
+                </div>
+
+                <div class="ml-result" id="mlDemoResult" hidden>
+                    <div class="eyebrow">LIVE RESULT</div>
+                    <div class="ml-result-title">
+                        <strong id="mlResultTitle"></strong>
+                        <span id="mlResultSeverity"></span>
+                    </div>
+                    <p id="mlResultDetail"></p>
+                    <button class="button secondary" id="mlResultGoLive" type="button">
+                        Show incident in cockpit
+                    </button>
+                </div>
+            </section>
+
+            <section class="ml-evidence-card">
+                <div class="eyebrow">MEASURED PERFORMANCE</div>
+                <h4>Six-class detector</h4>
+                <p class="ml-demo-lead">
+                    The headline number is a fixed held-out weapon comparison.
+                    Six-class behaviour is reported separately and honestly.
+                </p>
+
+                <div class="ml-metrics">
+                    <div><span>Held-out mAP@50</span><strong>0.890</strong></div>
+                    <div><span>Held-out mAP@50–95</span><strong>0.650</strong></div>
+                    <div><span>Weapon recall</span><strong>0.809</strong></div>
+                    <div><span>All six classes mAP@50</span><strong>0.744</strong></div>
+                </div>
+
+                <div class="ml-comparison">
+                    <span>Old prototype</span>
+                    <strong>0.589 → 0.890 mAP@50</strong>
+                    <small>Knife recall 0.345 → 0.843 on identical held-out images.</small>
+                </div>
+
+                <div class="ml-pipeline">
+                    <span>YOLOv8s</span>
+                    <i>→</i>
+                    <span>NMS</span>
+                    <i>→</i>
+                    <span>per-class dedupe</span>
+                    <i>→</i>
+                    <span>8-frame confirmation</span>
+                    <i>→</i>
+                    <span>gateway severity</span>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="ml-plots">
+            <figure>
+                <img src="ml-demo/comparison-test-BoxPR_curve.png" alt="Precision-recall curve">
+                <figcaption>Precision–recall curve on the fixed 385-image comparison set.</figcaption>
+            </figure>
+            <figure>
+                <img src="ml-demo/comparison-test-confusion_matrix_normalized.png"
+                     alt="Normalised confusion matrix">
+                <figcaption>Normalised confusion matrix after held-out evaluation.</figcaption>
+            </figure>
+        </div>
+
+        <p class="algo-note">
+            YOLO supplies the detector architecture. CYPHER supplies the dataset pipeline,
+            false-positive controls, operational severity rules and incident integration.
+        </p>
 
     </div>
 
@@ -1893,6 +2058,390 @@ function closeAlgorithms() {
 const algorithmsCloseButton = document.getElementById("algorithmsClose");
 if (algorithmsCloseButton) algorithmsCloseButton.addEventListener("click", () => showView("live"));
 
+/* ------------------------------------------------------ browser ML demo -- */
+
+/* The browser talks only to the local inference process. On the local cockpit
+   that process reports to the local gateway; on the AWS cockpit the companion
+   demo process on port 5002 reports to AWS. The page itself owns the workflow,
+   so no terminal is needed during the presentation. */
+const ML_ENGINE = ["localhost", "127.0.0.1"].includes(location.hostname)
+    ? "http://127.0.0.1:5000"
+    : "http://127.0.0.1:5002";
+
+const mlDemoOverlay = document.getElementById("mlDemoOverlay");
+const mlDemoRun = document.getElementById("mlDemoRun");
+const mlDemoReset = document.getElementById("mlDemoReset");
+const mlDemoFile = document.getElementById("mlDemoFile");
+const mlDemoPreview = document.getElementById("mlDemoPreview");
+const mlDemoCamera = document.getElementById("mlDemoCamera");
+const mlDemoProgress = document.getElementById("mlDemoProgress");
+const mlProgressText = document.getElementById("mlProgressText");
+const mlDemoLog = document.getElementById("mlDemoLog");
+const mlDemoResult = document.getElementById("mlDemoResult");
+const mlEngineStatus = document.getElementById("mlEngineStatus");
+const mlEngineDot = document.getElementById("mlEngineDot");
+const mlRaiseIncident = document.getElementById("mlRaiseIncident");
+const mlWebcamPreview = document.getElementById("mlWebcamPreview");
+const mlWebcamStart = document.getElementById("mlWebcamStart");
+const mlWebcamStop = document.getElementById("mlWebcamStop");
+const mlCaptureCanvas = document.getElementById("mlCaptureCanvas");
+const mlPreviewLabel = document.getElementById("mlPreviewLabel");
+let mlPreviewUrl = null;
+let mlCamerasLoaded = false;
+let mlSelectedFile = null;
+let mlAnalyzedBlob = null;
+let mlAnalyzedName = "webcam-frame.jpg";
+let mlWebcamStream = null;
+
+function openMlDemo() {
+    if (!mlDemoOverlay) return;
+    mlDemoOverlay.classList.add("visible");
+    loadMlDemoCameras();
+    checkMlEngine();
+}
+
+function closeMlDemo() {
+    stopMlWebcam();
+    if (mlDemoOverlay) mlDemoOverlay.classList.remove("visible");
+}
+
+async function loadMlDemoCameras() {
+    if (mlCamerasLoaded || !mlDemoCamera) return;
+    try {
+        const cameras = await api("/api/cameras");
+        mlDemoCamera.innerHTML = "";
+        (cameras || []).forEach(camera => {
+            const option = document.createElement("option");
+            option.value = camera.cameraId;
+            option.textContent = camera.cameraCode + " · " + (camera.location || camera.cameraName);
+            mlDemoCamera.appendChild(option);
+        });
+        if (!mlDemoCamera.options.length) {
+            mlDemoCamera.innerHTML = '<option value="1">No cameras found</option>';
+        }
+        mlCamerasLoaded = true;
+    } catch (err) {
+        if (err.message !== "unauthorized") {
+            mlDemoCamera.innerHTML = '<option value="1">Camera list unavailable</option>';
+        }
+    }
+}
+
+async function checkMlEngine() {
+    if (!mlEngineStatus || !mlEngineDot) return;
+    mlEngineStatus.textContent = "Checking the local AI engine…";
+    mlEngineDot.className = "status-dot pending";
+    try {
+        const response = await fetch(ML_ENGINE + "/health", { cache: "no-store" });
+        if (!response.ok) throw new Error("AI engine unavailable");
+        const health = await response.json();
+        mlEngineDot.className = "status-dot";
+        mlEngineStatus.textContent = "AI engine connected · "
+            + health.classes.length + " classes · gateway " + health.gateway;
+        return true;
+    } catch (_) {
+        mlEngineDot.className = "status-dot offline";
+        mlEngineStatus.textContent = "AI engine not reachable. Start the local inference service.";
+        return false;
+    }
+}
+
+function setMlProgress(frame, message) {
+    if (mlDemoProgress) mlDemoProgress.value = frame;
+    if (mlProgressText) mlProgressText.textContent = frame + " / 8 frames";
+    if (mlDemoLog) {
+        mlDemoLog.textContent += "\n" + message;
+        mlDemoLog.scrollTop = mlDemoLog.scrollHeight;
+    }
+}
+
+function bestDetectionsByClass(detections) {
+    const best = {};
+    detections.forEach(detection => {
+        const label = String(detection.label || "").toLowerCase();
+        if (!best[label] || Number(detection.confidence) > Number(best[label].confidence)) {
+            best[label] = detection;
+        }
+    });
+    return Object.values(best);
+}
+
+function describeDetections(detections) {
+    if (!detections.length) return "No detections above the threshold.";
+    const unique = bestDetectionsByClass(detections).map(
+        detection => detection.label + " " + Number(detection.confidence).toFixed(1) + "%"
+    ).join(", ");
+    return unique + (detections.length > bestDetectionsByClass(detections).length
+        ? " · duplicate boxes collapsed"
+        : "");
+}
+
+function stopMlWebcam() {
+    if (mlWebcamStream) {
+        mlWebcamStream.getTracks().forEach(track => track.stop());
+        mlWebcamStream = null;
+    }
+    if (mlWebcamPreview) {
+        mlWebcamPreview.srcObject = null;
+        mlWebcamPreview.hidden = true;
+    }
+    if (mlWebcamStart) mlWebcamStart.hidden = false;
+    if (mlWebcamStop) mlWebcamStop.hidden = true;
+    if (!mlSelectedFile && mlDemoPreview) {
+        mlDemoPreview.hidden = false;
+        mlDemoPreview.removeAttribute("src");
+        if (mlPreviewLabel) mlPreviewLabel.textContent = "No image selected";
+    }
+    if (mlDemoRun) mlDemoRun.textContent = "Analyze selected image";
+}
+
+async function startMlWebcam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        notify("Webcam access is not available in this browser.");
+        return;
+    }
+    try {
+        stopMlWebcam();
+        mlSelectedFile = null;
+        if (mlDemoFile) mlDemoFile.value = "";
+        mlWebcamStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        mlWebcamPreview.srcObject = mlWebcamStream;
+        mlWebcamPreview.hidden = false;
+        mlDemoPreview.hidden = true;
+        mlPreviewLabel.textContent = "Mac webcam · live";
+        mlWebcamStart.hidden = true;
+        mlWebcamStop.hidden = false;
+        mlDemoRun.textContent = "Analyze webcam frame";
+        mlDemoResult.hidden = true;
+        mlRaiseIncident.hidden = true;
+        mlDemoLog.textContent = "Webcam started. Hold the object clearly in frame, then analyze.";
+        notify("Mac webcam started.");
+    } catch (err) {
+        notify("Webcam failed: " + err.message);
+    }
+}
+
+async function captureWebcamBlob() {
+    if (!mlWebcamStream || !mlWebcamPreview.videoWidth) {
+        throw new Error("The webcam is not ready");
+    }
+    mlCaptureCanvas.width = mlWebcamPreview.videoWidth;
+    mlCaptureCanvas.height = mlWebcamPreview.videoHeight;
+    mlCaptureCanvas.getContext("2d").drawImage(
+        mlWebcamPreview, 0, 0, mlCaptureCanvas.width, mlCaptureCanvas.height
+    );
+    return new Promise((resolve, reject) => {
+        mlCaptureCanvas.toBlob(
+            blob => blob ? resolve(blob) : reject(new Error("Could not capture webcam frame")),
+            "image/jpeg",
+            0.92
+        );
+    });
+}
+
+if (mlDemoFile) {
+    mlDemoFile.addEventListener("change", () => {
+        const file = mlDemoFile.files && mlDemoFile.files[0];
+        if (!file || !mlDemoPreview) return;
+        stopMlWebcam();
+        mlSelectedFile = file;
+        mlAnalyzedBlob = null;
+        if (mlPreviewUrl) URL.revokeObjectURL(mlPreviewUrl);
+        mlPreviewUrl = URL.createObjectURL(file);
+        mlDemoPreview.src = mlPreviewUrl;
+        mlDemoPreview.hidden = false;
+        mlPreviewLabel.textContent = file.name;
+        mlDemoResult.hidden = true;
+        mlRaiseIncident.hidden = true;
+        mlDemoLog.textContent = "Image loaded. Analyze it when you are ready.";
+        mlDemoProgress.value = 0;
+        mlProgressText.textContent = "0 / 8 frames";
+    });
+}
+
+if (mlWebcamStart) mlWebcamStart.addEventListener("click", startMlWebcam);
+if (mlWebcamStop) mlWebcamStop.addEventListener("click", stopMlWebcam);
+
+if (mlDemoReset) {
+    mlDemoReset.addEventListener("click", async () => {
+        const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
+        stopMlWebcam();
+        try {
+            await fetch(ML_ENGINE + "/demo/reset?camera_id=" + encodeURIComponent(cameraId),
+                        { method: "POST" });
+        } catch (_) { /* A reset is best-effort when the engine is unavailable. */ }
+        mlSelectedFile = null;
+        mlAnalyzedBlob = null;
+        if (mlDemoFile) mlDemoFile.value = "";
+        if (mlPreviewUrl) URL.revokeObjectURL(mlPreviewUrl);
+        mlPreviewUrl = null;
+        mlDemoPreview.removeAttribute("src");
+        mlDemoProgress.value = 0;
+        mlProgressText.textContent = "0 / 8 frames";
+        mlDemoLog.textContent = "Select an image or start the webcam to begin.";
+        mlDemoResult.hidden = true;
+        mlRaiseIncident.hidden = true;
+        notify("Detection workspace cleared.");
+    });
+}
+
+if (mlDemoRun) {
+    mlDemoRun.addEventListener("click", async () => {
+        if (!(await checkMlEngine())) {
+            notify("The AI engine is not reachable.");
+            return;
+        }
+        mlDemoRun.disabled = true;
+        mlDemoRun.textContent = "Analyzing…";
+        mlDemoResult.hidden = true;
+        mlRaiseIncident.hidden = true;
+        mlDemoLog.textContent = "Running YOLOv8s detection…";
+        try {
+            let detections = [];
+            if (mlWebcamStream) {
+                mlAnalyzedName = "webcam-frame.jpg";
+                const counts = {};
+                const best = {};
+                let bestBlob = null;
+                let bestScore = -1;
+
+                for (let sample = 1; sample <= 5; sample += 1) {
+                    const blob = await captureWebcamBlob();
+                    const form = new FormData();
+                    form.append("file", blob, mlAnalyzedName);
+                    const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form });
+                    if (!response.ok) throw new Error("Inference failed with status " + response.status);
+                    const result = await response.json();
+                    const frameDetections = result.detections || [];
+                    frameDetections.forEach(detection => {
+                        const label = String(detection.label || "").toLowerCase();
+                        counts[label] = (counts[label] || 0) + 1;
+                        if (!best[label] || Number(detection.confidence) > Number(best[label].confidence)) {
+                            best[label] = detection;
+                        }
+                    });
+                    const score = frameDetections.length
+                        ? Math.max(...frameDetections.map(d => Number(d.confidence) || 0))
+                        : 0;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestBlob = blob;
+                    }
+                    mlDemoLog.textContent = "Webcam sample " + sample + "/5 · "
+                        + describeDetections(frameDetections);
+                    await new Promise(resolve => setTimeout(resolve, 120));
+                }
+
+                mlAnalyzedBlob = bestBlob;
+                // A webcam result must be stable in at least two of five samples.
+                detections = Object.entries(counts)
+                    .filter(([, count]) => count >= 2)
+                    .map(([label]) => best[label]);
+                mlDemoLog.textContent = "Stable webcam result: " + describeDetections(detections);
+            } else if (mlSelectedFile) {
+                mlAnalyzedBlob = mlSelectedFile;
+                mlAnalyzedName = mlSelectedFile.name;
+                const form = new FormData();
+                form.append("file", mlAnalyzedBlob, mlAnalyzedName);
+                const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form });
+                if (!response.ok) throw new Error("Inference failed with status " + response.status);
+                const result = await response.json();
+                detections = result.detections || [];
+                mlDemoLog.textContent = describeDetections(detections);
+            } else {
+                notify("Choose an image or start the webcam first.");
+                return;
+            }
+
+            if (detections.length) {
+                mlRaiseIncident.hidden = false;
+                mlDemoLog.textContent += "\nReview the result, then confirm it if you want an incident.";
+            }
+        } catch (err) {
+            mlDemoLog.textContent = "ERROR: " + err.message;
+        } finally {
+            mlDemoRun.disabled = false;
+            mlDemoRun.textContent = mlWebcamStream ? "Analyze webcam frame" : "Analyze selected image";
+        }
+    });
+}
+
+if (mlRaiseIncident) {
+    mlRaiseIncident.addEventListener("click", async () => {
+        if (!(await checkMlEngine()) || !mlAnalyzedBlob) {
+            notify("Analyze an image or webcam frame first.");
+            return;
+        }
+
+        const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
+        mlRaiseIncident.disabled = true;
+        mlRaiseIncident.textContent = "Confirming over 8 frames…";
+        mlDemoLog.textContent = "Running the eight-frame confirmation rule…";
+        mlDemoProgress.value = 0;
+        mlProgressText.textContent = "0 / 8 frames";
+
+        try {
+            await fetch(ML_ENGINE + "/demo/reset?camera_id=" + encodeURIComponent(cameraId),
+                        { method: "POST" });
+            let incident = null;
+            let lastDetections = [];
+
+            for (let frame = 1; frame <= 8; frame += 1) {
+                const form = new FormData();
+                form.append("file", mlAnalyzedBlob, mlAnalyzedName);
+                const response = await fetch(
+                    ML_ENGINE + "/monitor/frame?camera_id=" + encodeURIComponent(cameraId),
+                    { method: "POST", body: form }
+                );
+                if (!response.ok) throw new Error("Inference failed with status " + response.status);
+                const result = await response.json();
+                lastDetections = result.detections || [];
+                const skipped = (result.skipped || []).join("; ");
+                setMlProgress(frame, "Frame " + frame + "/8 · " + describeDetections(lastDetections)
+                    + (skipped ? " · " + skipped : " · incident created"));
+                if (result.incidents_raised && result.incidents_raised.length) {
+                    incident = result.incidents_raised[0];
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 120));
+            }
+
+            if (!incident) throw new Error("No incident was created");
+            const confidence = lastDetections.length
+                ? Math.max(...lastDetections.map(d => Number(d.confidence) || 0))
+                : 0;
+            document.getElementById("mlResultTitle").textContent =
+                incident.title + " · incident #" + incident.incidentId;
+            document.getElementById("mlResultSeverity").textContent = incident.severity;
+            document.getElementById("mlResultDetail").textContent =
+                "Detected at " + confidence.toFixed(1) + "% confidence. "
+                + "The gateway graded this event as " + incident.severity + ".";
+            mlDemoResult.hidden = false;
+            await refreshAll();
+            notify(incident.severity + " incident #" + incident.incidentId + " created.");
+        } catch (err) {
+            mlDemoLog.textContent += "\nERROR: " + err.message;
+        } finally {
+            mlRaiseIncident.disabled = false;
+            mlRaiseIncident.textContent = "Confirm detection and raise incident";
+        }
+    });
+}
+
+const mlDemoCloseButton = document.getElementById("mlDemoClose");
+if (mlDemoCloseButton) mlDemoCloseButton.addEventListener("click", () => showView("live"));
+
+const mlResultGoLive = document.getElementById("mlResultGoLive");
+if (mlResultGoLive) {
+    mlResultGoLive.addEventListener("click", () => {
+        closeMlDemo();
+        showView("live");
+    });
+}
+
 /* --------------------------------------------------------- live trace -- */
 
 /* The algorithm, running. The AI engine streams its reasoning over
@@ -1980,6 +2529,7 @@ function showView(view) {
     closeCameras();
     closeAnalytics();
     closeAlgorithms();
+    closeMlDemo();
     closeTrace();
     document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
     const target = document.querySelector('.nav-item[data-view="' + view + '"]');
@@ -2127,6 +2677,8 @@ document.querySelectorAll(".nav-item").forEach(item => {
             openAnalytics();
         } else if (view === "algorithms") {
             openAlgorithms();
+        } else if (view === "ml-demo") {
+            openMlDemo();
         } else if (view === "trace") {
             openTrace();
         }
