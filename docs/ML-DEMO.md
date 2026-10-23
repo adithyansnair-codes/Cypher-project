@@ -21,15 +21,9 @@ it into a reliable, auditable incident system.**
 
 ## Before the demonstration
 
-Check these three services:
-
-```bash
-curl -s localhost:8081/health
-curl -s localhost:5000/health
-curl -s localhost:5001/health
-```
-
-Expected status is `UP` for the gateway, AI engine and reporting worker.
+Open the local cockpit at `http://localhost:8081` and sign in. The gateway and
+AI engine run as local background services; no terminal is needed during the
+presentation.
 
 The trained checkpoint is stored outside Git because it is 21 MB:
 
@@ -58,16 +52,18 @@ table and one precision–recall or confusion-matrix image.
 > validation result separately: mAP@50 0.744. We have also included the
 > limitations rather than hiding them.
 
-### 3. Run the real pipeline — 45 seconds
+### 3. Run the real pipeline from the website — 45 seconds
 
-```bash
-cd ~/CYPHER/.dsh-scratch/work
-./ai/demo-ml.sh live
-```
+1. Open **Live detection** in the cockpit.
+2. Start the Mac webcam, or select an image from the Mac.
+3. Hold the object in good light and press **Analyze webcam frame** or
+   **Analyze selected image**.
+4. Show the annotated frame with its bounding box and confidence.
+5. Press **Confirm detection and raise incident**.
 
-The terminal prints the detected class, confidence, severity decision and new
-incident number. For a safe rehearsal without a database write, run
-`./ai/demo-ml.sh` instead.
+Webcam analysis samples five frames and keeps only detections present in at
+least two. Confirmation then checks eight consecutive frames before posting to
+the gateway.
 
 ### 4. Show the result in the cockpit — 45 seconds
 
@@ -95,8 +91,8 @@ Use the **Our engineering contribution** card:
   transactional and publish live updates only after commit.
 - We exposed runtime decisions through Live trace and added RBAC, audit history
   and multi-format reporting.
-- We connected the same model to a terminal CLI, FastAPI service and ESP32-CAM
-  stream through one incident contract.
+- We connected the same model to a browser workspace, terminal CLI, FastAPI
+  service and ESP32-CAM stream through one incident contract.
 
 ## Honest questions to expect
 
@@ -123,4 +119,5 @@ transactional integration, observability and the complete working product.
 - Model card: [`ai/evidence/README.md`](../ai/evidence/README.md)
 - Machine-readable metrics: [`ai/evidence/metrics.json`](../ai/evidence/metrics.json)
 - Training pipeline: [`ai/training/README.md`](../ai/training/README.md)
+- Browser detection workspace: `backend/src/main/resources/static/index.html`
 - Same contract used by all inputs: [`ai/cli.py`](../ai/cli.py)
