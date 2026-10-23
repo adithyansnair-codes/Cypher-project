@@ -30,7 +30,7 @@ fi
 printf '\n%s\n' 'ALGORITHM'
 printf '%s\n' 'YOLOv8s @ 640 px -> class-aware NMS -> one best box per class'
 printf '%s\n' '-> 8-frame confirmation -> 90 s cooldown -> gateway severity rule'
-printf '%s\n' '-> transactional PostgreSQL ingest -> post-commit WebSocket update'
+printf '%s\n' '-> transactional database ingest -> post-commit WebSocket update'
 
 CLI_ARGS=(
     "$ROOT/ai/cli.py"

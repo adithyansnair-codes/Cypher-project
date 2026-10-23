@@ -950,13 +950,12 @@
             </article>
 
             <article class="algo-card">
-                <h4>Atomic ingest — job, detection, incident and alert</h4>
+                <h4>Transactional ingest — incident and alert</h4>
                 <span class="algo-where">create_incident_with_alert()</span>
                 <p>
-                    The gateway records the inference job and source detection, then calls a
-                    stored procedure that writes the incident and alert in the same transaction.
-                    Detection → incident → alert cannot half-happen, and Analytics counts the
-                    actual model output rather than display-only trace data.
+                    The gateway grades a detection and writes the incident with its matching alert
+                    in one transaction. The local evidence build also stores the inference job and
+                    source detection; the AWS DA2 build uses the migrated RDS MySQL database.
                 </p>
             </article>
 
@@ -995,9 +994,9 @@
                 <h4>Reporting — three formats, one surface</h4>
                 <span class="algo-where">reporting/ (C#)</span>
                 <p>
-                    CSV, Excel and PDF rendered by the reporting worker straight from PostgreSQL;
-                    the gateway proxies them so the cockpit keeps one origin and one token, and
-                    the worker stays on the loopback interface.
+                    CSV, Excel and PDF rendered by the reporting worker straight from the
+                    application database; the gateway proxies them so the cockpit keeps one
+                    origin and one token, and the worker stays on the loopback interface.
                 </p>
             </article>
 

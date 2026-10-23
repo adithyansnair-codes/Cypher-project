@@ -11,7 +11,7 @@ photo / camera
     -> one best box per class
     -> temporal confirmation and cooldown
     -> gateway severity rule
-    -> database transaction
+    -> transactional database ingest
     -> live cockpit update
     -> audit trail and export
 ```
