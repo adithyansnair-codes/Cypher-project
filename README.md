@@ -404,3 +404,9 @@ The CYPHER interface was designed as a clean security operations cockpit with co
 ## 📜 License
 
 This project was developed for academic purposes at **VIT Chennai**.
+
+## CI/CD
+
+See [the CI/CD guide](docs/CI-CD.md) for automated checks, validation evidence,
+manual staging approval, secrets setup and instructor demonstration steps.
+The staging workflow is disabled by default; no production deployment is configured.
