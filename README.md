@@ -65,13 +65,16 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - Camera and project administration (MoSCoW S-07)
 - Analytics view: incident trend, severity split, detection totals
 - Live trace: the detection pipeline's reasoning, streamed to the cockpit as it runs
+- Six-class YOLOv8s detection: knife, pistol, person, fire, smoke and lying/fall
+- Terminal CLI, FastAPI engine and ESP32-CAM MJPEG input through one incident contract
+- Reproducible training/evaluation pipeline with a fixed 385-image comparison set
+- Model card, PR/F1 curves and normalised confusion matrices
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 
-### 🤖 Planned AI Features
+### 🤖 Future AI Work
 
 - AI-powered Login Anomaly Detection
-- Intelligent Activity Monitoring
 - Suspicious Login Alerts
 - User Behaviour Analytics
 - Smart Dashboard Insights
@@ -97,6 +100,14 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 
 - React
 - TypeScript
+
+### AI and Computer Vision
+
+- Python
+- PyTorch
+- Ultralytics YOLOv8s
+- OpenCV
+- FastAPI
 
 ### Cloud
 
@@ -139,6 +150,11 @@ The CYPHER platform follows a three-tier architecture consisting of a React fron
 
 ```
 CYPHER/
+│
+├── ai/
+│   ├── app/              # FastAPI detection engine
+│   ├── training/         # dataset conversion and training
+│   └── evidence/         # measured model card, curves and matrices
 │
 ├── backend/
 │   ├── controller/

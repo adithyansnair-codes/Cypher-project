@@ -4,6 +4,12 @@ Everything is overridable by environment variable so the service can point at a
 different gateway or camera without a code change.
 """
 import os
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRATCH = ROOT.parent
+DEFAULT_WEIGHTS = SCRATCH / "training/runs/cypher-v3-6class/weights/best.pt"
 
 
 class Settings:
@@ -17,14 +23,15 @@ class Settings:
     SERVICE_PASSWORD: str = os.getenv("CYPHER_SERVICE_PASSWORD", "Admin@2026")
 
     # ---- detection ---------------------------------------------------------
-    # Path to the fine-tuned weapon detector produced by ai/train.py.
-    WEIGHTS: str = os.getenv("YOLO_WEIGHTS", "ai/models/weapon_best.pt")
+    # Current six-class detector. It is kept outside Git because the checkpoint
+    # is 21 MB; explicit YOLO_WEIGHTS always takes precedence.
+    WEIGHTS: str = os.getenv("YOLO_WEIGHTS", str(DEFAULT_WEIGHTS))
 
     # Minimum confidence before a detection is reported as an incident.
     CONFIDENCE: float = float(os.getenv("YOLO_CONFIDENCE", "0.45"))
 
-    # Inference resolution. 416 keeps latency low enough for a live demo.
-    IMG_SIZE: int = int(os.getenv("YOLO_IMGSZ", "416"))
+    # Match the resolution used to train and evaluate the current model.
+    IMG_SIZE: int = int(os.getenv("YOLO_IMGSZ", "640"))
 
     # Which camera row in the database this engine reports against. Defaults to
     # the first camera returned by the gateway when unset.

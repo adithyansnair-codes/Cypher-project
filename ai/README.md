@@ -5,7 +5,7 @@ Boot gateway, which owns the database. This service holds no persistent state.
 
 ## Verified result
 
-A fine-tuned weapon detector driving the live incident pipeline:
+The six-class detector drives the live incident pipeline:
 
 ```
 image  ->  YOLO  ->  POST /api/incidents/ingest  ->  CRITICAL incident in the cockpit
@@ -17,34 +17,37 @@ image  ->  YOLO  ->  POST /api/incidents/ingest  ->  CRITICAL incident in the co
 
 | | |
 |---|---|
-| Architecture | YOLOv8n (transfer learning from COCO weights) |
-| Dataset | guns-knives object detection — 4,409 train / 1,043 val / 385 test |
-| Classes | `knife`, `pistol` |
-| Input | 416 px |
-| Training | 8 epochs, Apple MPS, **5 minutes** |
+| Architecture | YOLOv8s, fine-tuned from COCO weights |
+| Dataset | 18,642 train / 2,656 validation / 385 held-out comparison images |
+| Classes | `knife`, `pistol`, `person`, `fire`, `smoke`, `lying` |
+| Input | 640 px |
+| Training | 40-epoch five-class stage + 20-epoch six-class fine-tune, Apple MPS |
+| Checkpoint | `.dsh-scratch/training/runs/cypher-v3-6class/weights/best.pt` |
 
-**Validation metrics** (1,043 images, 1,203 instances):
+**Held-out comparison metrics** (385 images, 416 weapon boxes):
 
 | Metric | Value |
 |---|---|
-| mAP@50 | **0.589** |
-| mAP@50-95 | **0.403** |
-| Mean precision | 0.751 |
-| Mean recall | 0.509 |
+| mAP@50 | **0.8898** |
+| mAP@50-95 | **0.6502** |
+| Mean precision | 0.8652 |
+| Mean recall | 0.8088 |
 
 | Class | Precision | Recall | AP@50 |
 |---|---|---|---|
-| knife | 0.806 | 0.345 | 0.452 |
-| pistol | 0.697 | 0.673 | 0.725 |
+| knife | 0.8432 | 0.8426 | 0.9116 |
+| pistol | 0.8873 | 0.7750 | 0.8680 |
 
-Full numbers in [`evidence/metrics.json`](evidence/metrics.json), curves and
-confusion matrix in [`evidence/`](evidence/).
+Across all six classes, the merged validation split reaches **mAP@50 0.7435**
+and **mAP@50–95 0.5149**. Full model card, per-class tables, PR/F1 curves,
+confusion matrices, limitations and the team’s engineering contribution are in
+[`evidence/README.md`](evidence/README.md).
 
-**Honest limitations.** 8 epochs on ~27% of the training set, chosen to fit a
-short deadline; both loss curves were still falling when training stopped, so
-more epochs would improve these numbers. Knife recall (0.345) is the weak point
-— knives are small, low-contrast and often partly occluded. This is a working
-prototype, not a production detector.
+**Honest limitations.** The weapon comparison set and merged validation set
+measure different things. `lying` has only 15 validation boxes, and upstream
+`GUN` annotation boundaries depress pistol recall on the merged split. The model
+has not yet been validated on a large, site-specific feed from the actual
+cameras. See the full limitations in the evidence model card.
 
 ## Endpoints
 
@@ -112,18 +115,21 @@ same class on the same camera is suppressed for `INCIDENT_COOLDOWN` seconds.
 
 ## Training
 
-Training scripts live outside the repo (they need the Kaggle dataset). The
-pipeline was:
+The reproducible dataset and training scripts are in
+[`training/`](training/README.md). Raw datasets and checkpoints stay outside Git
+because they are large:
 
-1. `train.py` — fine-tune `yolov8n.pt` on the guns-knives YOLO dataset
-2. `evaluate.py` — validation metrics, confusion matrix, PR curves, labelled samples
+1. `fetch_datasets.py` — fetch the Hugging Face sources
+2. `to_yolo.py` — normalise, remap and split all sources into one dataset
+3. `train.py` — two-stage YOLOv8s transfer learning
+4. `evaluate.py` — fixed comparison metrics, matrices and PR/F1/P/R curves
 
-To reproduce, point `data.yaml` at your copy of the dataset — the Kaggle version
-hardcodes `/kaggle/input/...` paths and fails anywhere else.
+The fixed 385-image test split is copied untouched, so old and new checkpoints
+are scored on the same images.
 
 ## Next
 
-- Microphone-free fall detection and fire/smoke (needs a labelled dataset; the
-  "Datacluster Fire and Smoke **Sample**" set is only 100 images and cannot train)
-- Swap the Mac webcam for the ESP32-CAM stream. The detector takes any
-  `cv2.VideoCapture` source, so only `source` changes.
+- Add more site-specific fall/lying footage and clean inconsistent `GUN` boxes.
+- Evaluate the detector through the ESP32-CAM under real lighting and motion.
+- Add a tracked-byte-stream option and a durable event queue before treating
+  browser delivery as a production message bus.

@@ -220,6 +220,7 @@ async def monitor_frame(
                 model=Path(detector.weights).name,
                 threshold=settings.CONFIDENCE,
                 inference_ms=round(inference_ms, 1),
+                bounding_box=det["box"],
             )
             _last_raised[(cid, label)] = time.time()
             raised.append(incident)
@@ -271,13 +272,13 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
             detections = detector.detect(frame)
             inference_ms = (time.perf_counter() - frame_started) * 1000
             labels_this_frame = {str(d["label"]).lower() for d in detections}
-            best_this_frame: dict[str, float] = {}
+            best_this_frame: dict[str, dict[str, Any]] = {}
             for d in detections:
                 label = str(d["label"]).lower()
                 seen[label] += 1
-                best_this_frame[label] = max(
-                    best_this_frame.get(label, 0.0), float(d["confidence"])
-                )
+                if (label not in best_this_frame
+                        or float(d["confidence"]) > float(best_this_frame[label]["confidence"])):
+                    best_this_frame[label] = d
 
             # advance the streak for labels present, reset it for those absent
             for label in list(_streak):
@@ -287,7 +288,8 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                 _streak[(cid, label)] += 1
 
             observed = ", ".join(
-                f"{name} {conf:.0f}%" for name, conf in sorted(best_this_frame.items())
+                f"{name} {det['confidence']:.0f}%"
+                for name, det in sorted(best_this_frame.items())
             ) or "nothing above threshold"
             _trace(
                 cid,
@@ -302,7 +304,8 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                 inference_ms=round(inference_ms, 1),
             )
 
-            for label, confidence in best_this_frame.items():
+            for label, det in best_this_frame.items():
+                confidence = float(det["confidence"])
                 if not _is_reportable(label) or _on_cooldown(cid, label):
                     continue
                 if _streak[(cid, label)] < CONFIRM_FRAMES:
@@ -324,6 +327,7 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                         model=Path(detector.weights).name,
                         threshold=settings.CONFIDENCE,
                         inference_ms=round(inference_ms, 1),
+                        bounding_box=det["box"],
                     )
                     _last_raised[(cid, label)] = time.time()
                     reported.add(label)

@@ -83,6 +83,7 @@ class GatewayClient:
         model: str | None = None,
         threshold: float | None = None,
         inference_ms: float | None = None,
+        bounding_box: list[int] | None = None,
     ) -> dict[str, Any]:
         """Submit a detection. The gateway derives CRITICAL for weapons/fire.
 
@@ -99,6 +100,7 @@ class GatewayClient:
             "model": model,
             "threshold": threshold,
             "inferenceMs": inference_ms,
+            "boundingBox": bounding_box,
         }
         response = requests.post(
             f"{settings.GATEWAY_URL}/api/incidents/ingest",

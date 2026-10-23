@@ -20,9 +20,11 @@ echo "weights so far:"
 ls -1 "$RUN/weights" 2>/dev/null | tail -4 || true
 
 echo
-echo "── stage 1 · five classes (finished) ──"
-echo "  stage1-5class-40ep.pt → mAP50 0.901 / mAP50-95 0.668 on the 385-image test"
-echo "  (the previously shipped model was 0.589 / 0.403)"
+echo "── checkpoints ──"
+echo "  stage 2 six-class (demo) → mAP50 0.890 / mAP50-95 0.650 on the 385-image test"
+echo "  stage 1 five-class       → mAP50 0.901 / mAP50-95 0.668 on that weapon set"
+echo "  selected: stage 2, because it also covers lying/fall integration"
+echo "  original prototype       → mAP50 0.589 / mAP50-95 0.403"
 
 echo
 echo "── jobs ──"

@@ -878,17 +878,18 @@
         <div class="algo-grid">
 
             <article class="algo-card">
-                <h4>Weapon detection — YOLOv8n, fine-tuned</h4>
+                <h4>Detection algorithm — YOLOv8s</h4>
                 <span class="algo-where">ai/app/detector.py</span>
                 <p>
-                    Single-shot detection: one forward pass over a 416&nbsp;px frame returns
-                    boxes, classes and confidences together. No region proposals, which is why
-                    it keeps up with a live feed.
+                    A single-stage, anchor-free detector: one forward pass over a
+                    640&nbsp;px frame predicts boxes, classes and confidences together.
+                    Ultralytics applies class-aware non-maximum suppression to remove
+                    overlapping proposals before CYPHER receives the detections.
                 </p>
                 <ul>
-                    <li>Classes: knife, pistol — 4,409 train / 1,043 val images</li>
-                    <li>Validation: mAP@50 0.589, mAP@50-95 0.403</li>
-                    <li>416&nbsp;px input chosen for latency, not accuracy</li>
+                    <li>Classes: knife, pistol, person, fire, smoke, lying</li>
+                    <li>18,642 train / 2,656 validation images; fixed 385-image comparison set</li>
+                    <li>Held-out weapons: mAP@50 <strong>0.890</strong>, mAP@50–95 <strong>0.650</strong></li>
                 </ul>
             </article>
 
@@ -904,6 +905,22 @@
             </article>
 
             <article class="algo-card">
+                <h4>Evaluation method — fixed test, PR and confusion</h4>
+                <span class="algo-where">ai/evidence/README.md</span>
+                <p>
+                    Old and new models are scored on the same 385 held-out images.
+                    The six-class behaviour is measured separately on the merged
+                    validation split, then inspected with precision–recall, F1 and
+                    normalised confusion matrices.
+                </p>
+                <ul>
+                    <li>Weapons held-out: mAP@50 0.890, mAP@50–95 0.650, recall 0.809</li>
+                    <li>All six classes: mAP@50 0.744, mAP@50–95 0.515</li>
+                    <li>Old baseline: mAP@50 0.589, knife recall 0.345</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
                 <h4>Severity grading — decided by the gateway</h4>
                 <span class="algo-where">IncidentService.deriveSeverity</span>
                 <p>
@@ -912,18 +929,34 @@
                 </p>
                 <ul>
                     <li>weapon · knife · pistol · rifle · gun · fire → CRITICAL, whatever the confidence</li>
-                    <li>smoke · fall → HIGH at ≥&nbsp;85&nbsp;%, otherwise MEDIUM</li>
+                    <li>smoke · fall · lying → HIGH at ≥&nbsp;85&nbsp;%, otherwise MEDIUM</li>
                     <li>everything else by confidence: ≥&nbsp;90 HIGH, ≥&nbsp;70 MEDIUM, else LOW</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Atomic ingest — incident and alert in one transaction</h4>
+                <h4>Our engineering contribution</h4>
+                <span class="algo-where">dataset · safety rules · event pipeline</span>
+                <p>
+                    YOLO supplies the detector architecture. CYPHER turns it into a
+                    dependable incident system through decisions that are visible in
+                    the running application.
+                </p>
+                <ul>
+                    <li>Merged five sources, normalised their label formats and re-split skewed data deterministically</li>
+                    <li>Measured a real false-positive failure, then designed de-duplication, confirmation and cooldown around it</li>
+                    <li>Made severity gateway-owned, ingest transactional and broadcast post-commit; added trace, audit and RBAC</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
+                <h4>Atomic ingest — job, detection, incident and alert</h4>
                 <span class="algo-where">create_incident_with_alert()</span>
                 <p>
-                    The AI engine posts a detection; a stored procedure writes the incident and
-                    its alert together, and a trigger closes the alert when the incident is
-                    resolved. Detection → incident → alert cannot half-happen.
+                    The gateway records the inference job and source detection, then calls a
+                    stored procedure that writes the incident and alert in the same transaction.
+                    Detection → incident → alert cannot half-happen, and Analytics counts the
+                    actual model output rather than display-only trace data.
                 </p>
             </article>
 

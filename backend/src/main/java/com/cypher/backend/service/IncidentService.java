@@ -11,6 +11,7 @@ import com.cypher.backend.repository.IncidentRepository;
 import com.cypher.backend.websocket.IncidentSocketHandler;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -189,14 +190,20 @@ public class IncidentService {
                     "severity must be one of LOW, MEDIUM, HIGH, CRITICAL (got " + severity + ")");
         }
 
+        // Job + detection are written in this same transaction as the incident
+        // and alert. If any insert fails, rollback removes all four instead of
+        // leaving an incident with no underlying detection for Analytics.
+        Long detectionId = recordDetection(request, camera);
+
         entityManager.createNativeQuery(
-                "CALL create_incident_with_alert(:projectId, :cameraId, :title, :description, :severity, :assignedTo)")
+                "CALL create_incident_with_alert(:projectId, :cameraId, :title, :description, :severity, :assignedTo, :detectionId)")
                 .setParameter("projectId", camera.getProjectId())
                 .setParameter("cameraId", camera.getCameraId())
                 .setParameter("title", request.getTitle())
                 .setParameter("description", request.getDescription())
                 .setParameter("severity", severity)
                 .setParameter("assignedTo", reportedBy)
+                .setParameter("detectionId", detectionId)
                 .executeUpdate();
 
         // The procedure does not return the new id, so read back the newest
@@ -231,6 +238,50 @@ public class IncidentService {
         publishAfterCommit("detection.trace", detection);
 
         return response;
+    }
+
+    /**
+     * Record the detector run and its output before creating the incident.
+     * These rows are deliberately not fire-and-forget: the same database
+     * transaction protects the incident, alert and source detection.
+     */
+    @SuppressWarnings("unchecked")
+    private Long recordDetection(IncidentIngestRequest request, Camera camera) {
+        Number modelId = (Number) entityManager.createNativeQuery(
+                        "SELECT model_id FROM ai_models WHERE model_name = 'CYPHER-YOLOv8s' AND version = '3.0'")
+                .getSingleResult();
+
+        Number jobId = (Number) entityManager.createNativeQuery("""
+                        INSERT INTO inference_jobs (
+                            camera_id, model_id, started_at, completed_at, status, frames_processed
+                        ) VALUES (
+                            :cameraId, :modelId, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'COMPLETED', 1
+                        )
+                        RETURNING job_id
+                        """)
+                .setParameter("cameraId", camera.getCameraId())
+                .setParameter("modelId", modelId.longValue())
+                .getSingleResult();
+
+        String object = request.getDetectedObject() == null
+                ? "unknown" : request.getDetectedObject().trim().toLowerCase();
+        double confidence = request.getConfidence() == null ? 0d : request.getConfidence();
+        String box = request.getBoundingBox() == null ? null : request.getBoundingBox().toString();
+
+        Query detection = entityManager.createNativeQuery("""
+                INSERT INTO detections (
+                    camera_id, job_id, detected_object, confidence, bounding_box, detected_at
+                ) VALUES (
+                    :cameraId, :jobId, :object, :confidence, CAST(:box AS jsonb), CURRENT_TIMESTAMP
+                )
+                RETURNING detection_id
+                """)
+                .setParameter("cameraId", camera.getCameraId())
+                .setParameter("jobId", jobId.longValue())
+                .setParameter("object", object)
+                .setParameter("confidence", confidence)
+                .setParameter("box", box);
+        return ((Number) detection.getSingleResult()).longValue();
     }
 
     /**

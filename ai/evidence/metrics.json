@@ -1,24 +1,71 @@
 {
   "weights": "best.pt",
-  "dataset": "guns-knives (knife, pistol)",
-  "split": "val",
-  "images": 0,
-  "mAP50": 0.5886,
-  "mAP50_95": 0.4029,
-  "mean_precision": 0.7514,
-  "mean_recall": 0.5088,
-  "per_class": {
-    "knife": {
-      "precision": 0.8057,
-      "recall": 0.3449,
-      "AP50": 0.4522,
-      "AP50_95": 0.2678
+  "results": {
+    "comparison-test": {
+      "images": 385,
+      "map50": 0.8898,
+      "map50_95": 0.6502,
+      "mean_precision": 0.8652,
+      "mean_recall": 0.8088,
+      "per_class": {
+        "knife": {
+          "precision": 0.8432,
+          "recall": 0.8426,
+          "ap50": 0.9116,
+          "ap50_95": 0.6169
+        },
+        "pistol": {
+          "precision": 0.8873,
+          "recall": 0.775,
+          "ap50": 0.868,
+          "ap50_95": 0.6835
+        }
+      }
     },
-    "pistol": {
-      "precision": 0.6972,
-      "recall": 0.6728,
-      "AP50": 0.725,
-      "AP50_95": 0.5381
+    "merged-val": {
+      "images": 2656,
+      "map50": 0.7435,
+      "map50_95": 0.5149,
+      "mean_precision": 0.8291,
+      "mean_recall": 0.6759,
+      "per_class": {
+        "knife": {
+          "precision": 0.8549,
+          "recall": 0.7402,
+          "ap50": 0.7988,
+          "ap50_95": 0.5358
+        },
+        "pistol": {
+          "precision": 0.8676,
+          "recall": 0.2846,
+          "ap50": 0.3438,
+          "ap50_95": 0.2663
+        },
+        "person": {
+          "precision": 0.8068,
+          "recall": 0.6289,
+          "ap50": 0.7209,
+          "ap50_95": 0.3934
+        },
+        "fire": {
+          "precision": 0.7024,
+          "recall": 0.5446,
+          "ap50": 0.6538,
+          "ap50_95": 0.3611
+        },
+        "smoke": {
+          "precision": 0.936,
+          "recall": 0.8571,
+          "ap50": 0.9487,
+          "ap50_95": 0.5861
+        },
+        "lying": {
+          "precision": 0.8068,
+          "recall": 1.0,
+          "ap50": 0.995,
+          "ap50_95": 0.947
+        }
+      }
     }
   }
 }

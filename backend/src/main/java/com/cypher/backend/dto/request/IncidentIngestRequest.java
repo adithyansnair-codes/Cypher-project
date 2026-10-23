@@ -3,6 +3,8 @@ package com.cypher.backend.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 /**
  * The contract the AI engine uses to report a detection.
  *
@@ -50,6 +52,9 @@ public class IncidentIngestRequest {
 
     /** Inference time for the frame, in milliseconds. */
     private Double inferenceMs;
+
+    /** Optional pixel box [x1, y1, x2, y2] for the detection that raised this incident. */
+    private List<Double> boundingBox;
 
     /** Where the frame came from: a camera index, file or stream URL. */
     private String source;
@@ -132,6 +137,14 @@ public class IncidentIngestRequest {
 
     public void setInferenceMs(Double inferenceMs) {
         this.inferenceMs = inferenceMs;
+    }
+
+    public List<Double> getBoundingBox() {
+        return boundingBox;
+    }
+
+    public void setBoundingBox(List<Double> boundingBox) {
+        this.boundingBox = boundingBox;
     }
 
     public String getSource() {

@@ -191,6 +191,7 @@ def main() -> None:
                     trace=[f"cli: {label} {det['confidence']:.1f}% in {det['box']}"],
                     model=Path(args.weights).name,
                     threshold=args.conf,
+                    bounding_box=det["box"],
                 )
                 raised += 1
                 last_raised[(args.camera_id, label)] = time.time()

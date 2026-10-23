@@ -15,6 +15,7 @@ import shutil
 import sys
 from pathlib import Path
 
+import yaml
 from ultralytics import YOLO
 
 DATASETS = {
@@ -23,6 +24,19 @@ DATASETS = {
     "merged-val": Path(
         "/Users/adithyansnair/CYPHER/.dsh-scratch/datasets/cypher-v2/data.yaml"),
 }
+
+
+def image_count(data_yaml: Path, split: str = "val") -> int:
+    """Count images without relying on an internal Ultralytics counter."""
+    config = yaml.safe_load(data_yaml.read_text())
+    root = Path(config.get("path", data_yaml.parent))
+    if not root.is_absolute():
+        root = data_yaml.parent / root
+    split_path = Path(config[split])
+    if not split_path.is_absolute():
+        split_path = root / split_path
+    suffixes = {".bmp", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"}
+    return sum(1 for path in split_path.rglob("*") if path.suffix.lower() in suffixes)
 
 
 def main() -> None:
@@ -54,7 +68,7 @@ def main() -> None:
             }
 
         summary[label] = {
-            "images": int(getattr(metrics, "seen", 0)),
+            "images": image_count(data),
             "map50": round(float(metrics.box.map50), 4),
             "map50_95": round(float(metrics.box.map), 4),
             "mean_precision": round(float(metrics.box.mp), 4),
@@ -62,7 +76,15 @@ def main() -> None:
             "per_class": per_class,
         }
 
-        for plot in ("confusion_matrix.png", "confusion_matrix_normalized.png"):
+        plots = (
+            "confusion_matrix.png",
+            "confusion_matrix_normalized.png",
+            "BoxPR_curve.png",
+            "BoxF1_curve.png",
+            "BoxP_curve.png",
+            "BoxR_curve.png",
+        )
+        for plot in plots:
             source = Path(metrics.save_dir) / plot
             if source.exists():
                 shutil.copy(source, out / f"{label}-{plot}")

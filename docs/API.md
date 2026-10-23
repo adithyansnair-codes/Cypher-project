@@ -132,13 +132,28 @@ incident's alerts to `CLOSED`. This is MoSCoW requirement **M-08**.
 ### `POST /api/incidents/ingest` — the AI engine's entry point (MoSCoW M-05)
 
 ```json
-{ "cameraId": 2, "title": "Knife detected", "detectedObject": "knife", "confidence": 91.4 }
+{
+  "cameraId": 2,
+  "title": "Knife detected",
+  "detectedObject": "knife",
+  "confidence": 91.4,
+  "model": "best.pt",
+  "threshold": 0.35,
+  "inferenceMs": 18.2,
+  "boundingBox": [44, 48, 156, 163],
+  "trace": ["YOLOv8s: knife 91.4%", "8-frame streak confirmed"]
+}
 ```
 
 `201` returns the created incident. When `severity` is omitted the **gateway**
 derives it from `detectedObject` and `confidence` — weapons and fire are
 CRITICAL whatever the confidence — so a new detector cannot invent its own
 priority vocabulary. `400` on an unknown camera.
+
+The inference job, source detection, incident and alert are written in one
+database transaction. `incidents.detection_id` therefore points to the exact
+model output that raised the incident, and Analytics counts live detections
+rather than seeded demo rows.
 
 ---
 
