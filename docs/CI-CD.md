@@ -1,9 +1,10 @@
 # CYPHER CI/CD: implementation and instructor evidence
 
-## Status — 23 October 2026
+## Status — 24 October 2026
 
-Implemented locally on `ci/practical-pipeline`, based on `700a4f808895c734a80598034bbecb090ff505be`.
-The connected GitHub app could not write (403), so changes are being published through the authenticated collaborator browser session on `ci/practical-pipeline`. No Actions success is claimed until the hosted run completes. No AWS resources were created and no deployment was triggered.
+Published as [draft PR #30](https://github.com/adithyansnair-codes/Cypher-project/pull/30) on `ci/practical-pipeline`. No AWS resources were created and no deployment was triggered.
+
+The [first hosted PR run](https://github.com/adithyansnair-codes/Cypher-project/actions/runs/39959201851) passed frontend/AI contracts, Java tests/migrations, reporting export checks and Docker Compose integration. The security gate correctly failed on PostgreSQL JDBC CVE-2026-54291 and prevented downstream image builds. The driver was upgraded from Spring Boot's managed 42.7.11 to patched 42.7.12 in commit `d6fd61bcaf99c51b3bdb1265c930d008d0990f1b`; see the [upstream advisory](https://github.com/pgjdbc/pgjdbc/security/advisories/GHSA-j92g-9f8w-j867). The subsequent run must pass before merging. This failure/fix history is a real security-gate demonstration, not an intentionally broken test.
 
 Locally verified:
 - Frontend deployed/source copies match; all inline JavaScript passes Node syntax checks.
@@ -15,7 +16,7 @@ Locally verified:
 - Seven deployment-gate tests pass: exact successful SHA accepted, absent/failed/running/wrong-SHA/wrong-branch/latest-failed evidence rejected.
 - Both workflow files pass actionlint 1.7.7; Python fatal-error lint and shell syntax checks pass.
 
-Still unverified: execution on GitHub-hosted Linux runners; Docker builds/Compose execution; Trivy scan findings; registry publishing; SSH deployment and environment approval. Local integration used actual processes and PostgreSQL, not containers. Do not describe those pending checks as complete.
+Still unverified at this documentation revision: the complete green gate after the driver fix, all three standalone image scans, registry publishing, SSH deployment and environment approval. Check the latest run and downloaded evidence for subsequent results. Staging delivery remains implemented but unexecuted; do not describe it as demonstrated.
 
 ## What was inspected
 
@@ -52,26 +53,15 @@ Artifact retention: Java JAR/test results, reporting output and integration logs
 
 ## First priority: obtain a real green Actions run
 
-The authenticated collaborator browser session can publish the branch. The app permission change below is optional for future connector access; it is not required for browser publishing:
-1. In GitHub's installed app settings, make this repository accessible to the connected app and approve requested **Contents: write**, **Workflows: write**, and **Pull requests: write** permissions where supported. A collaborator's push permission alone does not give the app these permissions. If the app cannot request them, use an authenticated local clone/GitHub CLI instead. Never send a token in chat.
-2. Apply the supplied patch in a clean clone (commands below), push `ci/practical-pipeline`, then open a draft PR into `main`. Existing workflows on `main` were absent at inspection; these workflows do not deploy on push.
-3. In **Actions → CYPHER CI**, inspect the run for that exact commit. Resolve any failed Linux/container/security checks; rerun only after a fix or a diagnosed transient failure. Do not blanket-ignore scanner findings to obtain a green badge.
-4. Download test results, integration logs and image-scan artifacts. Record the commit SHA and run URL next to each screenshot.
-5. After review, the owner can protect `main` using a branch rule/ruleset: require PR review and the **CI gate** check, block force pushes/deletions, and prevent unauthorized bypass. Select the real check after its first run exists. Require a current branch before merging.
+PR #30 already contains the implementation; do not reapply the patch or create a duplicate branch.
 
-Patch application (from a clean repository clone; substitute the downloaded patch path):
+1. Open the latest **CYPHER CI** run linked from PR #30 and confirm the **CI gate** succeeds for the current commit. Resolve failures instead of ignoring scanner findings.
+2. Download test results, integration logs and all three image-scan artifacts. Record the source SHA, tested merge SHA (for PR runs), and run URL with screenshots.
+3. Show the first failed security run and the driver upgrade, then the successful run. This demonstrates the pipeline preventing an unsafe change from passing.
+4. After review, the owner can protect `main` using a branch rule/ruleset: require PR review and **CI gate**, block force pushes/deletions, and prevent unauthorized bypass. Require a current branch before merging.
+5. Merge only after review and a green current PR; verify the resulting `main` push run also passes. Staging checks the exact `main` commit's push run.
 
-```sh
-git fetch origin
-git switch -c ci/practical-pipeline 700a4f808895c734a80598034bbecb090ff505be
-git apply --check /path/to/CYPHER-CICD.patch
-git apply /path/to/CYPHER-CICD.patch
-git add .
-git commit -m "Add tested CI and approval-gated staging pipeline"
-git push -u origin ci/practical-pipeline
-```
-
-If `main` has moved, merge/rebase it into the branch, resolve conflicts, and rerun CI before merging. The patch adds no credentials. CI requires **no custom secrets**; GitHub supplies `GITHUB_TOKEN`.
+CI requires **no custom secrets**; GitHub supplies `GITHUB_TOKEN`. The connected app's write permission is separate from collaborator access; this PR was published through the authenticated collaborator session. No credential or token needs to be pasted into chat.
 
 ## Enable staging only after CI is green and deployment is approved
 
@@ -129,7 +119,7 @@ There is intentionally no executable production deployment workflow. Before addi
 
 “CYPHER has a CI workflow covering its static frontend, Java gateway, Python AI integration code and C# reporting worker. A push or pull request runs checks automatically. We test against a temporary PostgreSQL database, apply Flyway migrations, build the application and test authentication, incident ingestion and report exports. Container builds and vulnerability scans are required before the final CI gate can pass. Test reports and logs are kept as evidence. Staging delivery is manual and protected by an environment reviewer, with credentials stored outside Git and image digests recorded for traceability. Production remains disabled until the live database and service topology are reconciled.”
 
-Until the first green GitHub run, add: **“The implementation and local tests pass; execution on GitHub and container/security checks are still pending.”** Do not say “fully deployed CI/CD” until that is evidenced.
+Until the full green gate is verified, add: **“Hosted tests and Docker integration pass; the initial security scan caught a vulnerable database driver, and the fix is undergoing the remaining checks.”** Do not say “fully deployed CI/CD” until that is evidenced.
 
 Viva answers:
 - **CI vs CD?** CI validates changes automatically. Our CD is approved delivery to staging, not unattended production deployment.
@@ -142,17 +132,17 @@ Viva answers:
 
 ## Evidence checklist and finish-early plan
 
-- [ ] Draft PR showing the workflows, tests and Docker changes.
+- [x] Draft PR showing the workflows, tests and Docker changes.
 - [ ] Green **CI gate** with commit SHA and run URL.
 - [ ] Expanded Java test/migration, Python test and reporting export output.
-- [ ] Integration log showing the test stack and passing HTTP assertions.
+- [x] Integration log showing the test stack and passing HTTP assertions.
 - [ ] Three successful container builds and their vulnerability reports.
 - [ ] Downloaded artifacts before retention expires.
-- [ ] A deliberate failing test in a separate temporary PR demonstrates that the gate blocks; restore/revert the test and show green again. Do not break main.
+- [x] The initial HIGH-severity driver finding failed the security job and CI gate; the patch commit records remediation. Pair this with the subsequent green run to demonstrate recovery.
 - [ ] `main` protection and staging reviewer settings, with secret values hidden.
 - [ ] Optional approved staging deployment record, digest manifest and health/demo screen.
 - [ ] Limitations slide: actual model accuracy, AWS topology reconciliation and production remain separate work.
 
-Day 1–2: publish through the collaborator session, resolve runner differences and obtain green CI. Day 3: capture the failure/recovery demonstration and evidence. Day 4–5: optionally configure a private approved staging host and demonstrate reviewer gating. Days 6–10 are buffer for model/deployment reconciliation and rehearsal. A truthful CI demonstration is ready earlier than a safe full production deployment.
+Day 1–2: PR published; finish the remaining scans and obtain green CI. Day 3: capture the failure/recovery demonstration and evidence. Day 4–5: optionally configure a private approved staging host and demonstrate reviewer gating. Days 6–10 are buffer for model/deployment reconciliation and rehearsal. A truthful CI demonstration is ready earlier than a safe full production deployment.
 
 References: [GitHub environment protection](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments), [GitHub secure workflow use](https://docs.github.com/en/actions/reference/security/secure-use).
