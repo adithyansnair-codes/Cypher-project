@@ -67,9 +67,15 @@ the gateway.
 
 Reliable manual upload examples are bundled under `ai/evidence/demo/`:
 
-- `smoke.jpg` — smoke detected at approximately 90% confidence
-- `crowd.jpg` — 53 person boxes, best confidence approximately 91%
-- `knife.jpg` — held-out knife image, approximately 92% confidence
+| File | Verified result |
+|---|---|
+| `knife.jpg` | knife, 96.93% |
+| `pistol.jpg` | pistol, 98.43% |
+| `person.jpg` | 5 person boxes, best 95.79% |
+| `crowd.jpg` | 44 person boxes, best 93.90% |
+| `fire.jpg` | fire, 91.17% |
+| `smoke.jpg` | smoke, 91.79% |
+| `lying.png` | lying, 97.87% |
 
 Use **Choose another image** and select one of these files when demonstrating a
 specific class. They are manual uploads; no sample is run automatically.
