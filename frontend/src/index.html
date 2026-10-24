@@ -1052,125 +1052,122 @@
         <div class="algo-grid">
 
             <article class="algo-card">
-                <h4>Detection algorithm — YOLOv8s</h4>
+                <h4>How the AI finds objects</h4>
                 <span class="algo-where">ai/app/detector.py</span>
                 <p>
-                    A single-stage, anchor-free detector: one forward pass over a
-                    640&nbsp;px frame predicts boxes, classes and confidences together.
-                    Ultralytics applies class-aware non-maximum suppression to remove
-                    overlapping proposals before CYPHER receives the detections.
+                    The model looks at the image once. It returns a box, a class name
+                    and a confidence score. It then removes repeated boxes drawn over
+                    the same object.
                 </p>
                 <ul>
                     <li>Classes: knife, pistol, person, fire, smoke, lying</li>
-                    <li>18,642 train / 2,656 validation images; fixed 385-image comparison set</li>
-                    <li>Held-out weapons: mAP@50 <strong>0.890</strong>, mAP@50–95 <strong>0.650</strong></li>
+                    <li>Trained on 18,642 images and checked on 2,656 separate images</li>
+                    <li>Weapon test score: mAP@50 <strong>0.890</strong></li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>False-positive suppression — three rules</h4>
+                <h4>How we stop false alarms</h4>
                 <span class="algo-where">ai/app/main.py</span>
-                <p>The part that needed measuring rather than guessing.</p>
+                <p>
+                    A single lucky-looking frame is not enough. We measured false pistol
+                    alerts on a webcam and added three simple rules.
+                </p>
                 <ul>
-                    <li>One incident per object class per frame — a single photo returned five identical boxes</li>
-                    <li>8-frame confirmation streak (~⅓&nbsp;s at 27&nbsp;fps): a webcam run scored “pistol” on 1,282 frames at 35–55&nbsp;% with no pistol present, so one frame is not evidence</li>
-                    <li>90&nbsp;s cooldown per class per camera, or a 30&nbsp;fps stream raises 30 incidents a second</li>
+                    <li>Keep only the best box for each object type in a frame</li>
+                    <li>Require the same detection in eight frames in a row</li>
+                    <li>Wait 90 seconds before reporting the same class on the same camera again</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Evaluation method — fixed test, PR and confusion</h4>
+                <h4>How we tested the model</h4>
                 <span class="algo-where">ai/evidence/README.md</span>
                 <p>
-                    Old and new models are scored on the same 385 held-out images.
-                    The six-class behaviour is measured separately on the merged
-                    validation split, then inspected with precision–recall, F1 and
-                    normalised confusion matrices.
+                    We tested the old and new models on the same 385 images that were
+                    not used for training. This makes the comparison fair.
                 </p>
                 <ul>
-                    <li>Weapons held-out: mAP@50 0.890, mAP@50–95 0.650, recall 0.809</li>
-                    <li>All six classes: mAP@50 0.744, mAP@50–95 0.515</li>
-                    <li>Old baseline: mAP@50 0.589, knife recall 0.345</li>
+                    <li>Old weapon score: 0.589</li>
+                    <li>New weapon score: <strong>0.890</strong></li>
+                    <li>Knife recall improved from 0.345 to <strong>0.843</strong></li>
+                    <li>All six classes together: 0.744 mAP@50</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Severity grading — decided by the gateway</h4>
+                <h4>Who decides how serious it is</h4>
                 <span class="algo-where">IncidentService.deriveSeverity</span>
                 <p>
-                    The detector reports what it saw; the gateway decides how serious it is, so a
-                    new model cannot invent its own priority vocabulary.
+                    The AI only says what it saw. The CYPHER backend decides whether
+                    the event is low, medium, high or critical.
                 </p>
                 <ul>
-                    <li>weapon · knife · pistol · rifle · gun · fire → CRITICAL, whatever the confidence</li>
-                    <li>smoke · fall · lying → HIGH at ≥&nbsp;85&nbsp;%, otherwise MEDIUM</li>
-                    <li>everything else by confidence: ≥&nbsp;90 HIGH, ≥&nbsp;70 MEDIUM, else LOW</li>
+                    <li>Weapons and fire: always CRITICAL</li>
+                    <li>Smoke, fall and lying: HIGH at 85% or above, otherwise MEDIUM</li>
+                    <li>Other classes use confidence thresholds</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Our engineering contribution</h4>
-                <span class="algo-where">dataset · safety rules · event pipeline</span>
+                <h4>What our team built</h4>
+                <span class="algo-where">data · rules · backend · cloud</span>
                 <p>
-                    YOLO supplies the detector architecture. CYPHER turns it into a
-                    dependable incident system through decisions that are visible in
-                    the running application.
+                    YOLO is an existing detector architecture. Our work was making it
+                    useful inside one complete incident-management product.
                 </p>
                 <ul>
-                    <li>Merged five sources, normalised their label formats and re-split skewed data deterministically</li>
-                    <li>Measured a real false-positive failure, then designed de-duplication, confirmation and cooldown around it</li>
-                    <li>Made severity gateway-owned, ingest transactional and broadcast post-commit; added trace, audit and RBAC</li>
+                    <li>Combined five datasets and fixed their label formats</li>
+                    <li>Built the webcam, image and live-video detection flow</li>
+                    <li>Added false-alarm rules, severity rules and incident saving</li>
+                    <li>Connected the AI to the dashboard, database, audit and AWS deployment</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Transactional ingest — incident and alert</h4>
+                <h4>How incidents are saved</h4>
                 <span class="algo-where">create_incident_with_alert()</span>
                 <p>
-                    The gateway grades a detection and writes the incident with its matching alert
-                    in one transaction. The local evidence build also stores the inference job and
-                    source detection; the AWS DA2 build uses the migrated RDS MySQL database.
+                    CYPHER saves the incident and its alert together. If one save fails,
+                    both are cancelled, so the dashboard cannot contain half an incident.
                 </p>
             </article>
 
             <article class="algo-card">
-                <h4>Authentication — BCrypt + HS256 JWT</h4>
+                <h4>How login is protected</h4>
                 <span class="algo-where">JwtService · JwtAuthenticationFilter</span>
                 <ul>
-                    <li>Passwords stored as BCrypt hashes (cost 10), never plaintext</li>
-                    <li>The token carries the role; a stateless filter verifies signature and expiry on every request</li>
-                    <li>The WebSocket handshake carries the same token, because a browser cannot set headers on it</li>
+                    <li>Passwords are stored as secure one-way hashes</li>
+                    <li>After login, a signed token proves who the user is</li>
+                    <li>Expired or invalid tokens cannot access private data</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Live delivery — pushed after commit</h4>
+                <h4>How the dashboard updates live</h4>
                 <span class="algo-where">IncidentSocketHandler</span>
                 <p>
-                    Events broadcast to every open cockpit, but only once the transaction has
-                    committed, so a rolled-back change is never announced. The client reconnects
-                    with backoff and falls back to polling if the channel stays down.
+                    After a new incident is saved, CYPHER pushes it to every open
+                    dashboard. If the live connection drops, the page reconnects and
+                    periodically refreshes instead.
                 </p>
             </article>
 
             <article class="algo-card">
-                <h4>Authorisation and audit — enforced and recorded</h4>
+                <h4>How permissions and history work</h4>
                 <span class="algo-where">SecurityConfig · trg_incident_changes</span>
                 <p>
-                    Roles are checked server-side against the matrix the seeded
-                    <code>role_permissions</code> rows describe, and every incident change is
-                    written to <code>audit_logs</code> by a trigger — the trail exists whatever
-                    made the change.
+                    Only allowed roles can acknowledge, resolve or delete incidents.
+                    The database automatically records changes in the audit trail.
                 </p>
             </article>
 
             <article class="algo-card">
-                <h4>Reporting — three formats, one surface</h4>
+                <h4>How reports are created</h4>
                 <span class="algo-where">reporting/ (C#)</span>
                 <p>
-                    CSV, Excel and PDF rendered by the reporting worker straight from the
-                    application database; the gateway proxies them so the cockpit keeps one
-                    origin and one token, and the worker stays on the loopback interface.
+                    CYPHER reads the saved incidents and creates CSV, Excel or PDF
+                    reports. The browser downloads them using the same secure login.
                 </p>
             </article>
 
@@ -2432,7 +2429,7 @@ async function monitorMlFrame() {
             mlMonitorStreak[label] = (mlMonitorStreak[label] || 0) + 1;
         });
 
-        await drawDetectionResult(blob, liveDetections);
+        await drawDetectionResult(blob, detections);
         const strongest = unique.slice().sort(
             (a, b) => Number(b.confidence) - Number(a.confidence)
         )[0];
@@ -2442,7 +2439,7 @@ async function monitorMlFrame() {
         }
         const streak = strongest ? mlMonitorStreak[strongest.label] || 0 : 0;
         const line = "Live frame " + mlMonitorFrame + " · "
-            + describeDetections(liveDetections) + " · streak " + streak + "/8";
+            + describeDetections(detections) + " · incident streak " + streak + "/8";
         mlMonitorTrace.push(line);
         mlMonitorTrace = mlMonitorTrace.slice(-6);
         if (mlDemoLog) mlDemoLog.textContent = mlMonitorTrace.join("\n");

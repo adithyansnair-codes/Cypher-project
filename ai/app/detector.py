@@ -31,6 +31,12 @@ class Detector:
             weights = "yolov8n.pt"
 
         self.model = YOLO(weights)
+        self.person_model = (
+            YOLO(settings.PERSON_WEIGHTS)
+            if Path(settings.PERSON_WEIGHTS).exists()
+            and Path(settings.PERSON_WEIGHTS) != Path(weights)
+            else None
+        )
         self.weights = weights
         self.classes = self.model.names
         log.info("loaded %s with %d classes: %s", weights, len(self.classes), list(self.classes.values()))
@@ -76,6 +82,27 @@ class Detector:
                     ]
                     detection["region"] = region_name
                     found.append(detection)
+
+        # COCO YOLOv8s is a strong general person detector. The six-class
+        # checkpoint is better for weapons/fire, but a close webcam face/torso
+        # is sometimes outside its person training distribution. Add the COCO
+        # result and replace a weaker custom person box for webcam frames.
+        if webcam and self.person_model is not None:
+            person_result = self.person_model.predict(
+                frame, imgsz=settings.IMG_SIZE, conf=0.25, verbose=False
+            )[0]
+            people = []
+            for box in person_result.boxes:
+                if person_result.names[int(box.cls)] != "person":
+                    continue
+                people.append({
+                    "label": "person",
+                    "confidence": round(float(box.conf) * 100, 2),
+                    "box": [round(float(v)) for v in box.xyxy[0]],
+                    "region": "full",
+                })
+            if people:
+                found = [d for d in found if d["label"] != "person"] + people
 
         found.sort(key=lambda d: d["confidence"], reverse=True)
         return found

@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SCRATCH = ROOT.parent
 DEFAULT_WEIGHTS = SCRATCH / "training/runs/cypher-v3-6class/weights/best.pt"
+DEFAULT_PERSON_WEIGHTS = SCRATCH / "training/weights/yolov8s.pt"
 
 
 class Settings:
@@ -26,6 +27,7 @@ class Settings:
     # Current six-class detector. It is kept outside Git because the checkpoint
     # is 21 MB; explicit YOLO_WEIGHTS always takes precedence.
     WEIGHTS: str = os.getenv("YOLO_WEIGHTS", str(DEFAULT_WEIGHTS))
+    PERSON_WEIGHTS: str = os.getenv("PERSON_WEIGHTS", str(DEFAULT_PERSON_WEIGHTS))
 
     # Minimum confidence before a detection is reported as an incident.
     CONFIDENCE: float = float(os.getenv("YOLO_CONFIDENCE", "0.45"))
