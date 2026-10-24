@@ -65,6 +65,15 @@ Webcam analysis samples five frames and keeps only detections present in at
 least two. Confirmation then checks eight consecutive frames before posting to
 the gateway.
 
+Reliable manual upload examples are bundled under `ai/evidence/demo/`:
+
+- `smoke.jpg` — smoke detected at approximately 90% confidence
+- `crowd.jpg` — 53 person boxes, best confidence approximately 91%
+- `knife.jpg` — held-out knife image, approximately 92% confidence
+
+Use **Choose another image** and select one of these files when demonstrating a
+specific class. They are manual uploads; no sample is run automatically.
+
 ### 4. Show the result in the cockpit — 45 seconds
 
 At `http://localhost:8081`:
