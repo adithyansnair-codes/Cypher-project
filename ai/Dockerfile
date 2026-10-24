@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 COPY ai/requirements.txt /tmp/requirements.txt
 # CPU wheels keep CI builds within hosted-runner disk limits; no GPU or weights required.
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && pip check
 COPY ai/app /app/ai/app
 COPY ai/__init__.py /app/ai/__init__.py
 ENV HOME=/tmp
