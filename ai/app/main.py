@@ -153,10 +153,14 @@ def health() -> dict[str, Any]:
 
 # --------------------------------------------------------------------- detect
 @app.post("/detect")
-async def detect(file: UploadFile = File(...)) -> JSONResponse:
+async def detect(
+    file: UploadFile = File(...),
+    conf: float | None = None,
+) -> JSONResponse:
     """Detect objects in an uploaded image. No incidents are created."""
     frame = await _read_upload(file)
-    found = detector.detect(frame)
+    threshold = None if conf is None else min(max(conf, 0.05), 0.95)
+    found = detector.detect(frame, conf=threshold)
     return JSONResponse(
         {
             "detections": found,

@@ -2948,6 +2948,11 @@ footer b {
     flex: 1;
 }
 
+.ml-live-button {
+    width: 100%;
+    margin-top: 9px;
+}
+
 .ml-engine-state {
     display: flex;
     align-items: center;
