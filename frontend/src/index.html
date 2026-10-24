@@ -2206,14 +2206,47 @@ function bestDetectionsByClass(detections) {
     return Object.values(best);
 }
 
+function boxIoU(a, b) {
+    if (!a || !b || a.length !== 4 || b.length !== 4) return 0;
+    const [ax1, ay1, ax2, ay2] = a.map(Number);
+    const [bx1, by1, bx2, by2] = b.map(Number);
+    const x1 = Math.max(ax1, bx1);
+    const y1 = Math.max(ay1, by1);
+    const x2 = Math.min(ax2, bx2);
+    const y2 = Math.min(ay2, by2);
+    const intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+    if (!intersection) return 0;
+    const areaA = Math.max(0, ax2 - ax1) * Math.max(0, ay2 - ay1);
+    const areaB = Math.max(0, bx2 - bx1) * Math.max(0, by2 - by1);
+    return intersection / Math.max(1, areaA + areaB - intersection);
+}
+
+function displayDetections(detections) {
+    const ordered = detections.slice().sort(
+        (a, b) => Number(b.confidence) - Number(a.confidence)
+    );
+    const kept = [];
+    ordered.forEach(detection => {
+        const duplicate = kept.some(existing =>
+            existing.label === detection.label
+            && boxIoU(existing.box, detection.box) > 0.78
+        );
+        if (!duplicate) kept.push(detection);
+    });
+    return kept;
+}
+
 function describeDetections(detections) {
     if (!detections.length) return "No detections above the threshold.";
-    const unique = bestDetectionsByClass(detections).map(
-        detection => detection.label + " " + Number(detection.confidence).toFixed(1) + "%"
+    const groups = {};
+    detections.forEach(detection => {
+        const label = detection.label;
+        if (!groups[label]) groups[label] = [];
+        groups[label].push(Number(detection.confidence));
+    });
+    return Object.entries(groups).map(([label, values]) =>
+        label + " ×" + values.length + " (best " + Math.max(...values).toFixed(1) + "%)"
     ).join(", ");
-    return unique + (detections.length > bestDetectionsByClass(detections).length
-        ? " · duplicate boxes collapsed"
-        : "");
 }
 
 function stopMlMonitoring() {
@@ -2309,7 +2342,7 @@ async function drawDetectionResult(blob, detections) {
     context.drawImage(bitmap, 0, 0);
     bitmap.close();
 
-    const unique = bestDetectionsByClass(detections);
+    const unique = displayDetections(detections);
     const lineWidth = Math.max(3, Math.round(mlCaptureCanvas.width / 260));
     const fontSize = Math.max(13, Math.round(mlCaptureCanvas.width / 42));
     context.lineWidth = lineWidth;
@@ -2341,8 +2374,7 @@ async function drawDetectionResult(blob, detections) {
     mlWebcamPreview.hidden = true;
     mlCaptureCanvas.hidden = false;
     mlPreviewLabel.textContent = unique.length
-        ? "Detected: " + unique.map(d => d.label + " "
-            + Number(d.confidence).toFixed(1) + "%").join(", ")
+        ? "Detected: " + describeDetections(unique)
         : "Captured frame · no detection";
 }
 
