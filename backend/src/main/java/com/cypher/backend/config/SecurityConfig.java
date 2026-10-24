@@ -72,6 +72,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/incidents/*/acknowledge", "/api/incidents/*/resolve")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/incidents/*")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN")
 
                         // Detection ingest is machine-to-machine; the AI engine
                         // signs in with an operator-grade service account.

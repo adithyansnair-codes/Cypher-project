@@ -129,6 +129,13 @@ incident's alerts to `CLOSED`. This is MoSCoW requirement **M-08**.
 | `404` | no such incident |
 | `409` | already resolved |
 
+### `DELETE /api/incidents/{id}`
+
+Permanently removes an incident. `SUPER_ADMIN` and `ADMIN` only. Alert and
+media rows are removed by their existing `ON DELETE CASCADE` constraints; the
+detector history remains available to analytics. Returns `204` on success or
+`404` when the incident does not exist.
+
 ### `POST /api/incidents/ingest` — the AI engine's entry point (MoSCoW M-05)
 
 ```json

@@ -1399,10 +1399,15 @@ function clearToken() {
    without the Ack/Resolve controls the server would refuse anyway (MoSCoW S-05). */
 
 const ACTION_ROLES = ["SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR"];
+const DELETE_ROLES = ["SUPER_ADMIN", "ADMIN"];
 let me = null;
 
 function canAct() {
     return !!me && ACTION_ROLES.includes(me.role);
+}
+
+function canDelete() {
+    return !!me && DELETE_ROLES.includes(me.role);
 }
 
 /* Exports follow the same idea: the seeded permission set grants REPORT_READ to
@@ -1581,14 +1586,24 @@ function renderIncidents(incidents) {
             event.stopPropagation();
             const id = button.getAttribute("data-id");
             const action = button.getAttribute("data-action");
+            if (action === "delete"
+                && !window.confirm(`Delete incident #${id} permanently?`)) {
+                return;
+            }
+            const originalText = button.textContent;
             button.disabled = true;
             button.textContent = "\u2026";
             try {
-                await api(`/api/incidents/${id}/${action}`, { method: "POST" });
+                const path = action === "delete"
+                    ? `/api/incidents/${id}`
+                    : `/api/incidents/${id}/${action}`;
+                await api(path, { method: action === "delete" ? "DELETE" : "POST" });
+                if (action === "delete") notify(`Incident #${id} deleted.`);
                 await refreshAll();
             } catch (err) {
                 notify(err.message);
                 button.disabled = false;
+                button.textContent = originalText;
             }
         });
     });
@@ -1600,14 +1615,21 @@ function incidentHtml(i) {
     const open = status === "OPEN";
     const acked = status === "ACKNOWLEDGED";
 
-    const actions = status === "RESOLVED" || status === "CLOSED"
-        ? '<span class="incident-status resolved-text">' + escapeHtml(status) + '</span>'
-        : !canAct()
-            ? '<span class="incident-status">READ ONLY</span>'
-            : '<span class="incident-actions">' +
-                  (open ? `<button data-action="acknowledge" data-id="${i.incidentId}">Ack</button>` : "") +
-                  `<button data-action="resolve" data-id="${i.incidentId}">Resolve</button>` +
-              '</span>';
+    let controls = "";
+    if (status === "RESOLVED" || status === "CLOSED") {
+        controls = '<span class="incident-status resolved-text">'
+            + escapeHtml(status) + '</span>';
+    } else if (!canAct()) {
+        controls = '<span class="incident-status">READ ONLY</span>';
+    } else {
+        controls = (open
+            ? `<button data-action="acknowledge" data-id="${i.incidentId}">Ack</button>`
+            : "") + `<button data-action="resolve" data-id="${i.incidentId}">Resolve</button>`;
+    }
+    if (canDelete()) {
+        controls += `<button class="delete-action" data-action="delete" data-id="${i.incidentId}">Delete</button>`;
+    }
+    const actions = '<span class="incident-actions">' + controls + '</span>';
 
     const where = [i.cameraName, i.location].filter(Boolean).join(" \u00b7 ");
     const when = i.occurredAt ? new Date(i.occurredAt).toLocaleString() : "";
@@ -1742,6 +1764,11 @@ function connectSocket() {
         }
         if (payload.type === "detection.trace") {
             appendDetectionTrace(payload);
+            return;
+        }
+        if (payload.type === "incident.deleted") {
+            notify("Incident #" + payload.incidentId + " deleted");
+            refreshAll();
             return;
         }
 

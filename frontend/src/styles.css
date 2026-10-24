@@ -3360,6 +3360,18 @@ footer b {
     background: var(--accent-light);
 }
 
+.incident-actions .delete-action {
+    color: var(--red);
+    border-color: rgba(220, 89, 104, .28);
+    background: var(--red-soft);
+}
+
+.incident-actions .delete-action:hover {
+    color: #fff;
+    border-color: var(--red);
+    background: var(--red);
+}
+
 .incident-actions button:disabled { opacity: .5; cursor: default; }
 
 .incident-id {

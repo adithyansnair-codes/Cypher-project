@@ -86,6 +86,18 @@ public class IncidentController {
         return act(() -> incidentService.resolve(id, operatorId(auth)));
     }
 
+    /** Permanently removes an incident. Restricted to SUPER_ADMIN and ADMIN. */
+    @DeleteMapping("/incidents/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            incidentService.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /** The counters shown across the top of the cockpit. */
     @GetMapping("/dashboard/stats")
     public DashboardStatsResponse stats() {

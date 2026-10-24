@@ -141,6 +141,25 @@ public class IncidentService {
         return response;
     }
 
+    /**
+     * Permanently remove an incident. Alerts and media reference incidents with
+     * ON DELETE CASCADE. Detection history is intentionally retained for
+     * analytics, but it can no longer point at an incident.
+     */
+    @Transactional
+    public void delete(Long incidentId) {
+        Incident incident = incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No incident with id " + incidentId));
+        Long cameraId = incident.getCameraId();
+        incidentRepository.delete(incident);
+        publishAfterCommit("incident.deleted", Map.of(
+                "incidentId", incidentId,
+                "cameraId", cameraId == null ? 0L : cameraId
+        ));
+        operatorStep("Operator deleted incident #" + incidentId, cameraId);
+    }
+
     @Transactional(readOnly = true)
     public DashboardStatsResponse stats() {
         // Midnight UTC today. The count is done in the database.
