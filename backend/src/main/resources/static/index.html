@@ -2351,7 +2351,7 @@ async function monitorMlFrame() {
         const blob = await captureWebcamBlob();
         const form = new FormData();
         form.append("file", blob, "webcam-frame.jpg");
-        const response = await fetch(ML_ENGINE + "/detect?conf=0.20",
+        const response = await fetch(ML_ENGINE + "/detect?conf=0.20&webcam=true",
                                      { method: "POST", body: form });
         if (!response.ok) throw new Error("Inference failed with status " + response.status);
         const result = await response.json();
@@ -2516,7 +2516,7 @@ if (mlDemoRun) {
                     const blob = await captureWebcamBlob();
                     const form = new FormData();
                     form.append("file", blob, mlAnalyzedName);
-                    const response = await fetch(ML_ENGINE + "/detect?conf=0.20",
+                    const response = await fetch(ML_ENGINE + "/detect?conf=0.20&webcam=true",
                                                  { method: "POST", body: form });
                     if (!response.ok) throw new Error("Inference failed with status " + response.status);
                     const result = await response.json();
@@ -2602,7 +2602,7 @@ if (mlRaiseIncident) {
                 const form = new FormData();
                 form.append("file", frameBlob, mlAnalyzedName);
                 const detectUrl = ML_ENGINE + "/detect"
-                    + (mlWebcamStream ? "?conf=0.20" : "");
+                    + (mlWebcamStream ? "?conf=0.20&webcam=true" : "");
                 const response = await fetch(detectUrl, { method: "POST", body: form });
                 if (!response.ok) throw new Error("Inference failed with status " + response.status);
                 const result = await response.json();

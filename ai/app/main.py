@@ -156,11 +156,12 @@ def health() -> dict[str, Any]:
 async def detect(
     file: UploadFile = File(...),
     conf: float | None = None,
+    webcam: bool = False,
 ) -> JSONResponse:
     """Detect objects in an uploaded image. No incidents are created."""
     frame = await _read_upload(file)
     threshold = None if conf is None else min(max(conf, 0.05), 0.95)
-    found = detector.detect(frame, conf=threshold)
+    found = detector.detect(frame, conf=threshold, webcam=webcam)
     return JSONResponse(
         {
             "detections": found,
