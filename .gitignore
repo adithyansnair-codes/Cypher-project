@@ -35,3 +35,9 @@ obj/
 *.backup
 *.backup-*
 *.tsbuildinfo
+
+# CI test output
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+test-results/
