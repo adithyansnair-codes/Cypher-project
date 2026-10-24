@@ -2100,6 +2100,9 @@ if (algorithmsCloseButton) algorithmsCloseButton.addEventListener("click", () =>
    gateway that served this page. That works for the local cockpit and for the
    AWS cockpit through code-server's authenticated /proxy/8081/ path. */
 const ML_ENGINE = "http://127.0.0.1:5000";
+const ML_LIVE_CLASSES = new Set([
+    "knife", "pistol", "gun", "weapon", "rifle", "fire", "smoke", "fall", "lying"
+]);
 
 const mlDemoOverlay = document.getElementById("mlDemoOverlay");
 const mlDemoRun = document.getElementById("mlDemoRun");
@@ -2415,7 +2418,10 @@ async function monitorMlFrame() {
         if (!response.ok) throw new Error("Inference failed with status " + response.status);
         const result = await response.json();
         const detections = result.detections || [];
-        const unique = bestDetectionsByClass(detections);
+        const liveDetections = detections.filter(
+            detection => ML_LIVE_CLASSES.has(detection.label)
+        );
+        const unique = bestDetectionsByClass(liveDetections);
         const present = new Set(unique.map(detection => detection.label));
 
         Object.keys(mlMonitorStreak).forEach(label => {
@@ -2426,7 +2432,7 @@ async function monitorMlFrame() {
             mlMonitorStreak[label] = (mlMonitorStreak[label] || 0) + 1;
         });
 
-        await drawDetectionResult(blob, detections);
+        await drawDetectionResult(blob, liveDetections);
         const strongest = unique.slice().sort(
             (a, b) => Number(b.confidence) - Number(a.confidence)
         )[0];
@@ -2436,7 +2442,7 @@ async function monitorMlFrame() {
         }
         const streak = strongest ? mlMonitorStreak[strongest.label] || 0 : 0;
         const line = "Live frame " + mlMonitorFrame + " · "
-            + describeDetections(detections) + " · streak " + streak + "/8";
+            + describeDetections(liveDetections) + " · streak " + streak + "/8";
         mlMonitorTrace.push(line);
         mlMonitorTrace = mlMonitorTrace.slice(-6);
         if (mlDemoLog) mlDemoLog.textContent = mlMonitorTrace.join("\n");
