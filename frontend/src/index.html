@@ -1052,130 +1052,105 @@
         <div class="algo-grid">
 
             <article class="algo-card">
-                <h4>How the AI finds objects</h4>
+                <h4>1. Detection model</h4>
                 <span class="algo-where">ai/app/detector.py</span>
                 <p>
-                    The model looks at the image once. It returns a box, a class name
-                    and a confidence score. It then removes repeated boxes drawn over
-                    the same object.
+                    CYPHER uses YOLOv8s. It checks an image once and returns the
+                    object’s box, class and confidence. Overlapping duplicate boxes
+                    are removed.
                 </p>
                 <ul>
-                    <li>Classes: knife, pistol, person, fire, smoke, lying</li>
-                    <li>Trained on 18,642 images and checked on 2,656 separate images</li>
-                    <li>Weapon test score: mAP@50 <strong>0.890</strong></li>
+                    <li>Classes: knife, pistol, person, fire, smoke and lying</li>
+                    <li>Trained on 18,642 images</li>
+                    <li>Runs on photos and live webcam frames</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>How we stop false alarms</h4>
+                <h4>2. Webcam handling</h4>
+                <span class="algo-where">ai/app/detector.py</span>
+                <p>
+                    A wide webcam image can make a knife look too small. CYPHER scans
+                    enlarged regions of the frame and maps the detected box back to
+                    the original image. A standard YOLO person detector helps reliably
+                    find the person in the frame.
+                </p>
+            </article>
+
+            <article class="algo-card">
+                <h4>3. False-alert rules</h4>
                 <span class="algo-where">ai/app/main.py</span>
                 <p>
-                    A single lucky-looking frame is not enough. We measured false pistol
-                    alerts on a webcam and added three simple rules.
+                    One frame can be wrong. These rules stop a weak detection from
+                    immediately becoming an incident.
                 </p>
                 <ul>
-                    <li>Keep only the best box for each object type in a frame</li>
-                    <li>Require the same detection in eight frames in a row</li>
-                    <li>Wait 90 seconds before reporting the same class on the same camera again</li>
+                    <li>Keep one best box per class</li>
+                    <li>Require eight matching frames in a row</li>
+                    <li>Wait 90 seconds before repeating the same alert</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>How we tested the model</h4>
-                <span class="algo-where">ai/evidence/README.md</span>
+                <h4>4. Priority decision</h4>
+                <span class="algo-where">IncidentService.deriveSeverity</span>
                 <p>
-                    We tested the old and new models on the same 385 images that were
-                    not used for training. This makes the comparison fair.
+                    The AI reports the object. The backend decides severity so the
+                    safety rules stay consistent.
                 </p>
                 <ul>
-                    <li>Old weapon score: 0.589</li>
-                    <li>New weapon score: <strong>0.890</strong></li>
+                    <li>Weapons and fire → CRITICAL</li>
+                    <li>Smoke, fall and lying → HIGH or MEDIUM</li>
+                    <li>Other classes → confidence-based priority</li>
+                </ul>
+            </article>
+
+            <article class="algo-card">
+                <h4>5. Model testing</h4>
+                <span class="algo-where">ai/evidence/README.md</span>
+                <p>
+                    Both models were tested on the same 385 images that were not used
+                    for training.
+                </p>
+                <ul>
+                    <li>mAP@50 improved from 0.589 to <strong>0.890</strong></li>
                     <li>Knife recall improved from 0.345 to <strong>0.843</strong></li>
                     <li>All six classes together: 0.744 mAP@50</li>
                 </ul>
             </article>
 
             <article class="algo-card">
-                <h4>Who decides how serious it is</h4>
-                <span class="algo-where">IncidentService.deriveSeverity</span>
+                <h4>6. Incident flow</h4>
+                <span class="algo-where">AI → gateway → database → dashboard</span>
+                <ol class="algo-steps">
+                    <li>Detect the object</li>
+                    <li>Apply confirmation rules</li>
+                    <li>Assign severity</li>
+                    <li>Save incident and alert together</li>
+                    <li>Push the new incident to the dashboard</li>
+                </ol>
+            </article>
+
+            <article class="algo-card">
+                <h4>7. Our contribution</h4>
+                <span class="algo-where">data · AI · backend · cloud</span>
                 <p>
-                    The AI only says what it saw. The CYPHER backend decides whether
-                    the event is low, medium, high or critical.
+                    YOLO provides the base model. The team built the complete working
+                    system around it.
                 </p>
                 <ul>
-                    <li>Weapons and fire: always CRITICAL</li>
-                    <li>Smoke, fall and lying: HIGH at 85% or above, otherwise MEDIUM</li>
-                    <li>Other classes use confidence thresholds</li>
+                    <li>Merged and cleaned five datasets</li>
+                    <li>Added crop scanning, person detection and false-alert controls</li>
+                    <li>Built the webcam, upload and live-monitoring interface</li>
+                    <li>Connected AI, database, dashboard and AWS deployment</li>
                 </ul>
-            </article>
-
-            <article class="algo-card">
-                <h4>What our team built</h4>
-                <span class="algo-where">data · rules · backend · cloud</span>
-                <p>
-                    YOLO is an existing detector architecture. Our work was making it
-                    useful inside one complete incident-management product.
-                </p>
-                <ul>
-                    <li>Combined five datasets and fixed their label formats</li>
-                    <li>Built the webcam, image and live-video detection flow</li>
-                    <li>Added false-alarm rules, severity rules and incident saving</li>
-                    <li>Connected the AI to the dashboard, database, audit and AWS deployment</li>
-                </ul>
-            </article>
-
-            <article class="algo-card">
-                <h4>How incidents are saved</h4>
-                <span class="algo-where">create_incident_with_alert()</span>
-                <p>
-                    CYPHER saves the incident and its alert together. If one save fails,
-                    both are cancelled, so the dashboard cannot contain half an incident.
-                </p>
-            </article>
-
-            <article class="algo-card">
-                <h4>How login is protected</h4>
-                <span class="algo-where">JwtService · JwtAuthenticationFilter</span>
-                <ul>
-                    <li>Passwords are stored as secure one-way hashes</li>
-                    <li>After login, a signed token proves who the user is</li>
-                    <li>Expired or invalid tokens cannot access private data</li>
-                </ul>
-            </article>
-
-            <article class="algo-card">
-                <h4>How the dashboard updates live</h4>
-                <span class="algo-where">IncidentSocketHandler</span>
-                <p>
-                    After a new incident is saved, CYPHER pushes it to every open
-                    dashboard. If the live connection drops, the page reconnects and
-                    periodically refreshes instead.
-                </p>
-            </article>
-
-            <article class="algo-card">
-                <h4>How permissions and history work</h4>
-                <span class="algo-where">SecurityConfig · trg_incident_changes</span>
-                <p>
-                    Only allowed roles can acknowledge, resolve or delete incidents.
-                    The database automatically records changes in the audit trail.
-                </p>
-            </article>
-
-            <article class="algo-card">
-                <h4>How reports are created</h4>
-                <span class="algo-where">reporting/ (C#)</span>
-                <p>
-                    CYPHER reads the saved incidents and creates CSV, Excel or PDF
-                    reports. The browser downloads them using the same secure login.
-                </p>
             </article>
 
         </div>
 
         <p class="algo-note">
-            Every threshold on this page is a project decision, recorded in a comment beside the
-            code that uses it.
+            Algorithm summary: YOLOv8s detection → webcam crop handling →
+            de-duplication and confirmation → backend severity decision → live incident.
         </p>
 
     </div>

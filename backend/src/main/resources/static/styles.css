@@ -2774,7 +2774,8 @@ footer b {
     color: var(--text-secondary);
 }
 
-.algo-card ul {
+.algo-card ul,
+.algo-card .algo-steps {
     margin: 0;
     padding-left: 16px;
     font-size: 12.5px;
