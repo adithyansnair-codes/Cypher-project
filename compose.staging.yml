@@ -1,0 +1,40 @@
+# Dedicated disposable staging host ONLY. This is not an AWS production manifest.
+# Images must be digest references from the approved staging workflow.
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cypher
+      POSTGRES_USER: cypher_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?configure staging DB_PASSWORD}
+    volumes: [staging_pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U cypher_user -d cypher']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  backend:
+    image: ${BACKEND_IMAGE:?digest required}
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: ${DB_PASSWORD:?configure staging DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?configure staging JWT_SECRET}
+      REPORTING_URL: http://reporting:5001
+      JPA_SHOW_SQL: 'false'
+    ports: ['127.0.0.1:8081:8081']
+    depends_on:
+      postgres:
+        condition: service_healthy
+  reporting:
+    image: ${REPORTING_IMAGE:?digest required}
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: ${DB_PASSWORD:?configure staging DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  staging_pgdata:

@@ -1,13 +1,11 @@
-FROM eclipse-temurin:21-jdk
-
-WORKDIR /app
-
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /src
 COPY backend/ .
+RUN chmod +x mvnw && ./mvnw -B -ntp package -DskipTests
 
-RUN chmod +x mvnw
-
-RUN ./mvnw clean package -DskipTests
-
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /src/target/backend-0.0.1-SNAPSHOT.jar app.jar
+USER 10001:10001
 EXPOSE 8081
-
-CMD ["java","-jar","target/backend-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

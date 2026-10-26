@@ -1,0 +1,12 @@
+.git
+.env
+**/.env
+**/__pycache__
+**/.venv
+**/target
+**/bin
+**/obj
+**/node_modules
+ai/evidence
+ai/models
+docs
