@@ -1423,7 +1423,7 @@ async function api(path, options = {}) {
 
     const response = await fetch(API + path, Object.assign({}, options, { headers }));
 
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 403) {
         clearToken();
         disconnectSocket();
         stopRefresh();
@@ -2542,7 +2542,17 @@ if (mlDemoRun) {
         mlDemoLog.textContent = "Running YOLOv8s detection…";
         try {
             let detections = [];
-            if (mlWebcamStream) {
+            if (mlSelectedFile) {
+                mlAnalyzedBlob = mlSelectedFile;
+                mlAnalyzedName = mlSelectedFile.name;
+                const form = new FormData();
+                form.append("file", mlAnalyzedBlob, mlAnalyzedName);
+                const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form });
+                if (!response.ok) throw new Error("Inference failed with status " + response.status);
+                const result = await response.json();
+                detections = result.detections || [];
+                mlDemoLog.textContent = describeDetections(detections);
+            } else if (mlWebcamStream) {
                 mlAnalyzedName = "webcam-frame.jpg";
                 const counts = {};
                 const best = {};
@@ -2583,16 +2593,6 @@ if (mlDemoRun) {
                     .filter(([, count]) => count >= 2)
                     .map(([label]) => best[label]);
                 mlDemoLog.textContent = "Stable webcam result: " + describeDetections(detections);
-            } else if (mlSelectedFile) {
-                mlAnalyzedBlob = mlSelectedFile;
-                mlAnalyzedName = mlSelectedFile.name;
-                const form = new FormData();
-                form.append("file", mlAnalyzedBlob, mlAnalyzedName);
-                const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form });
-                if (!response.ok) throw new Error("Inference failed with status " + response.status);
-                const result = await response.json();
-                detections = result.detections || [];
-                mlDemoLog.textContent = describeDetections(detections);
             } else {
                 notify("Choose an image or start the webcam first.");
                 return;
