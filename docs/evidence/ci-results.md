@@ -4,12 +4,12 @@ Recorded on 28 October 2026 from the checked-in workflows.
 
 ## GitHub Actions
 
-- Run: 40651469386
-- Commit: 6b34fed
+- Initial integration run: 40651469386 on commit 6b34fed
+- Final documentation run: 40657080455 on commit c1b288b
 - Conclusion: success
 - Jobs: Java 21 backend tests with PostgreSQL 16, .NET 10 reporting build,
   AI/frontend/configuration checks, and gateway/reporting image builds.
-- URL: https://github.com/adithyansnair-codes/Cypher-project/actions/runs/40651469386
+- URL: https://github.com/adithyansnair-codes/Cypher-project/actions/runs/40657080455
 
 ## Jenkins
 
@@ -23,3 +23,8 @@ Recorded on 28 October 2026 from the checked-in workflows.
   artifact archiving passed
 - Controller sizing note: run on an agent with at least 4 GB RAM. The 1 GB AWS
   DA2 instance is reserved for the deployed application.
+
+## Observability
+
+- AWS Prometheus target `cypher-backend`: UP
+- AWS Grafana dashboard screenshot: `docs/evidence/grafana-dashboard.jpg`
