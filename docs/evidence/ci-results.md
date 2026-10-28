@@ -10,6 +10,7 @@ Recorded on 28 October 2026 from the checked-in workflows.
 - Jobs: Java 21 backend tests with PostgreSQL 16, .NET 10 reporting build,
   AI/frontend/configuration checks, and gateway/reporting image builds.
 - URL: https://github.com/adithyansnair-codes/Cypher-project/actions/runs/40657080455
+- Screenshot: `docs/evidence/github-actions-run.jpg`
 
 ## Jenkins
 
@@ -23,8 +24,10 @@ Recorded on 28 October 2026 from the checked-in workflows.
   artifact archiving passed
 - Controller sizing note: run on an agent with at least 4 GB RAM. The 1 GB AWS
   DA2 instance is reserved for the deployed application.
+- Screenshot: `docs/evidence/jenkins-build-2.jpg`
 
 ## Observability
 
 - AWS Prometheus target `cypher-backend`: UP
+- Screenshot: `docs/evidence/prometheus-targets.jpg`
 - AWS Grafana dashboard screenshot: `docs/evidence/grafana-dashboard.jpg`
