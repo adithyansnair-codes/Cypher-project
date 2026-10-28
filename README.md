@@ -4,7 +4,7 @@
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.x-6DB33F?style=for-the-badge&logo=springboot)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791?style=for-the-badge&logo=postgresql)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql)
 ![JWT](https://img.shields.io/badge/JWT-Authentication-black?style=for-the-badge)
 ![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?style=for-the-badge&logo=amazonaws)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
@@ -69,6 +69,9 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 - Terminal CLI, FastAPI engine and ESP32-CAM MJPEG input through one incident contract
 - Reproducible training/evaluation pipeline with a fixed 385-image comparison set
 - Model card, PR/F1 curves and normalised confusion matrices
+- Private S3 evidence storage with short-lived signed download links
+- Prometheus metrics and a provisioned Grafana operations dashboard
+- GitHub Actions CI plus a reproducible Jenkins pipeline
 - Cloud Deployment (AWS EC2)
 - Secure Protected Routes
 
@@ -112,7 +115,16 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 ### Cloud
 
 - AWS EC2
+- AWS S3
 - Ubuntu Linux
+
+### Delivery and observability
+
+- GitHub Actions
+- Jenkins
+- Prometheus
+- Grafana
+- Docker Compose
 
 ### Tools
 
@@ -168,6 +180,10 @@ CYPHER/
 ├── frontend/
 │
 ├── docs/
+├── monitoring/           # Prometheus and provisioned Grafana dashboard
+├── infra/                # Jenkins image and AWS bootstrap helpers
+├── .github/workflows/    # GitHub Actions CI
+├── Jenkinsfile
 │
 └── README.md
 ```
@@ -265,6 +281,35 @@ The backend will start on:
 ```
 http://localhost:8081
 ```
+
+For the complete local stack (PostgreSQL 16, gateway, reporting worker,
+Prometheus and Grafana):
+
+```bash
+cp .env.example .env
+# Set DB_PASSWORD and JWT_SECRET in .env first.
+docker compose up -d --build
+```
+
+Open the gateway at `http://localhost:8081`, Prometheus at
+`http://localhost:9090`, and the provisioned CYPHER dashboard at
+`http://localhost:3000`.
+
+For an internet-independent S3 demo, add LocalStack and the media overlay:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.media.yml \
+  --profile media up -d --build
+```
+
+For Jenkins at `http://localhost:8088`:
+
+```bash
+docker compose --profile ci up -d --build jenkins
+```
+
+See [docs/OPERATIONS.md](docs/OPERATIONS.md) for deployment, CI/CD, monitoring,
+evidence-storage and AWS verification.
 
 ---
 

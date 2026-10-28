@@ -1,0 +1,97 @@
+name: CYPHER CI
+
+on:
+  push:
+    branches: ["main", "codex/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cypher-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests (Java 21 + PostgreSQL 16)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cypher
+          POSTGRES_USER: cypher_user
+          POSTGRES_PASSWORD: cypher_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cypher_user -d cypher"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Run backend tests
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          DB_NAME: cypher
+          DB_USER: cypher_user
+          DB_PASSWORD: cypher_ci_password
+          JWT_SECRET: Y2ktb25seS1jeXBoZXItand0LXNlY3JldC10aGF0LWlzLWxvbmcgZW5vdWdoLWZvci1oczI1Ng==
+        run: ./mvnw -B -ntp clean verify
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: backend/target/surefire-reports/
+          if-no-files-found: warn
+
+  reporting:
+    name: Reporting worker (.NET 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restore and build
+        working-directory: reporting
+        run: |
+          dotnet restore
+          dotnet build --no-restore --configuration Release
+
+  quality:
+    name: AI, frontend and deployment checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate Python syntax
+        run: python3 -m compileall -q ai
+      - name: Validate cockpit JavaScript
+        run: node scripts/check_frontend_js.mjs
+      - name: Validate JSON files
+        run: |
+          find monitoring -name '*.json' -print0 \
+            | xargs -0 -n1 python3 -m json.tool >/dev/null
+      - name: Validate Compose configuration
+        env:
+          DB_PASSWORD: cypher_ci_password
+          JWT_SECRET: Y2ktb25seS1jeXBoZXItand0LXNlY3JldC10aGF0LWlzLWxvbmcgZW5vdWdoLWZvci1oczI1Ng==
+        run: docker compose config --quiet
+      - name: Build deployment images
+        run: |
+          docker build --tag cypher-backend:ci .
+          docker build --tag cypher-reporting:ci reporting

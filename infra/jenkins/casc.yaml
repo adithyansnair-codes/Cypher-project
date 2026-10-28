@@ -1,0 +1,36 @@
+jenkins:
+  systemMessage: "CYPHER CI - Java 21, .NET 10, Node.js and Python"
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+jobs:
+  - script: |
+      pipelineJob('cypher-ci') {
+        description('CYPHER backend, reporting worker and configuration checks.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/adithyansnair-codes/Cypher-project.git')
+                }
+                branch('*/main')
+                extensions {
+                  cleanBeforeCheckout()
+                }
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }

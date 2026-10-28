@@ -51,7 +51,7 @@ public class SecurityConfig {
                                 "/ml-demo/**").permitAll()
 
                         // Public: liveness probe.
-                        .requestMatchers("/health").permitAll()
+                        .requestMatchers("/health", "/actuator/health", "/actuator/prometheus").permitAll()
 
                         // Public at the HTTP layer: the WebSocket handshake is
                         // authenticated by JwtHandshakeInterceptor instead,
@@ -64,9 +64,12 @@ public class SecurityConfig {
                         // become ROLE_<role> authorities. This matrix mirrors the
                         // role_permissions rows seeded by V2 and completed by V4.
 
-                        // Administration: the user directory and the audit trail.
-                        .requestMatchers("/users/**", "/api/audit/**")
+                        // Administration: the user directory.
+                        .requestMatchers("/users/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        // The seeded Security Manager role includes AUDIT_READ.
+                        .requestMatchers("/api/audit/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER")
 
                         // The operator workflow: acknowledge and resolve.
                         .requestMatchers(HttpMethod.POST,
@@ -74,6 +77,10 @@ public class SecurityConfig {
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/incidents/*")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/incidents/*/media")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/incidents/*/media/*")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "OPERATOR")
 
                         // Detection ingest is machine-to-machine; the AI engine
                         // signs in with an operator-grade service account.

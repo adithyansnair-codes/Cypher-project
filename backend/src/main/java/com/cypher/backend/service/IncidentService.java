@@ -60,6 +60,7 @@ public class IncidentService {
     private final CameraRepository cameraRepository;
     private final AlertRepository alertRepository;
     private final IncidentSocketHandler socketHandler;
+    private final IncidentMetrics metrics;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -67,11 +68,13 @@ public class IncidentService {
     public IncidentService(IncidentRepository incidentRepository,
                            CameraRepository cameraRepository,
                            AlertRepository alertRepository,
-                           IncidentSocketHandler socketHandler) {
+                           IncidentSocketHandler socketHandler,
+                           IncidentMetrics metrics) {
         this.incidentRepository = incidentRepository;
         this.cameraRepository = cameraRepository;
         this.alertRepository = alertRepository;
         this.socketHandler = socketHandler;
+        this.metrics = metrics;
     }
 
     @Transactional(readOnly = true)
@@ -108,6 +111,7 @@ public class IncidentService {
         }
         IncidentResponse response = enrich(List.of(incidentRepository.save(incident))).get(0);
         publishAfterCommit("incident.updated", response);
+        metrics.action("acknowledge");
         operatorStep("Operator acknowledged incident #" + incidentId, response.cameraId());
         return response;
     }
@@ -136,6 +140,7 @@ public class IncidentService {
         }
         IncidentResponse response = enrich(List.of(incidentRepository.save(incident))).get(0);
         publishAfterCommit("incident.updated", response);
+        metrics.action("resolve");
         operatorStep("Operator resolved incident #" + incidentId + " -> alerts closed by trigger",
                 response.cameraId());
         return response;
@@ -153,6 +158,7 @@ public class IncidentService {
                         "No incident with id " + incidentId));
         Long cameraId = incident.getCameraId();
         incidentRepository.delete(incident);
+        metrics.action("delete");
         publishAfterCommit("incident.deleted", Map.of(
                 "incidentId", incidentId,
                 "cameraId", cameraId == null ? 0L : cameraId
@@ -235,6 +241,7 @@ public class IncidentService {
                         "Incident was created but could not be read back"));
 
         IncidentResponse response = enrich(List.of(saved)).get(0);
+        metrics.created(response.severity(), request.getDetectedObject());
         publishAfterCommit("incident.created", response);
 
         // The reasoning behind this incident, for the cockpit's live trace: the

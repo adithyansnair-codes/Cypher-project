@@ -2,10 +2,12 @@ using Cypher.Reporter;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Loopback only: the Spring Boot gateway is the single public surface and
-// proxies /api/reports/** here, so this service never needs to be exposed.
+// Loopback by default: the Spring Boot gateway is the single public surface and
+// proxies /api/reports/** here. The Compose image binds 0.0.0.0 inside its
+// private container network; no host port is published.
 var port = Environment.GetEnvironmentVariable("REPORTING_PORT") ?? "5001";
-builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
+var bind = Environment.GetEnvironmentVariable("REPORTING_BIND") ?? "127.0.0.1";
+builder.WebHost.UseUrls($"http://{bind}:{port}");
 
 // QuestPDF's community licence covers this project. Without this line the
 // library refuses to render at all.

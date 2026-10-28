@@ -1297,6 +1297,45 @@
 
 </div>
 
+<!-- =============================================================
+     INCIDENT MEDIA OVERLAY
+     Photos and clips live in private S3 storage; the gateway issues
+     short-lived signed links only after the user has authenticated.
+============================================================= -->
+
+<div class="audit-overlay" id="mediaOverlay">
+
+    <div class="audit-panel">
+
+        <div class="audit-head">
+
+            <div>
+                <div class="eyebrow">EVIDENCE STORE</div>
+                <h3 id="mediaTitle">Incident media</h3>
+                <p>Private evidence in S3, with ten-minute signed download links.</p>
+            </div>
+
+            <button class="audit-close" id="mediaClose" type="button">
+                Close
+            </button>
+
+        </div>
+
+        <div class="media-toolbar">
+            <button type="button" id="mediaChoose">Attach image or video</button>
+            <input id="mediaFileInput" type="file"
+                   accept="image/jpeg,image/png,image/webp,video/mp4" hidden>
+            <span id="mediaUploadStatus" class="media-status"></span>
+        </div>
+
+        <div class="media-list" id="mediaRows">
+            <div class="audit-empty">Loading…</div>
+        </div>
+
+    </div>
+
+</div>
+
 <div class="auth-overlay" id="authOverlay">
     <form class="auth-card" id="authForm" autocomplete="on">
         <div class="auth-brand">CYPHER<span>/</span>OPS</div>
@@ -1382,6 +1421,10 @@ function canDelete() {
     return !!me && DELETE_ROLES.includes(me.role);
 }
 
+function canManageMedia() {
+    return canAct();
+}
+
 /* Exports follow the same idea: the seeded permission set grants REPORT_READ to
    every role except VIEWER. */
 const EXPORT_ROLES = ["SUPER_ADMIN", "ADMIN", "SECURITY_MANAGER", "ANALYST", "OPERATOR"];
@@ -1419,11 +1462,13 @@ async function api(path, options = {}) {
     const token = getToken();
 
     if (token) headers["Authorization"] = "Bearer " + token;
-    if (options.body) headers["Content-Type"] = "application/json";
+    if (options.body && !(options.body instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
+    }
 
     const response = await fetch(API + path, Object.assign({}, options, { headers }));
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
         clearToken();
         disconnectSocket();
         stopRefresh();
@@ -1436,7 +1481,7 @@ async function api(path, options = {}) {
             const body = await response.json();
             detail = body.error || body.message || detail;
         } catch (_) { /* not JSON */ }
-        throw new Error(detail);
+        throw new Error(response.status === 403 ? "forbidden" : detail);
     }
     if (response.status === 204) return null;
 
@@ -1558,6 +1603,10 @@ function renderIncidents(incidents) {
             event.stopPropagation();
             const id = button.getAttribute("data-id");
             const action = button.getAttribute("data-action");
+            if (action === "media") {
+                openIncidentMedia(id);
+                return;
+            }
             if (action === "delete"
                 && !window.confirm(`Delete incident #${id} permanently?`)) {
                 return;
@@ -1597,6 +1646,9 @@ function incidentHtml(i) {
         controls = (open
             ? `<button data-action="acknowledge" data-id="${i.incidentId}">Ack</button>`
             : "") + `<button data-action="resolve" data-id="${i.incidentId}">Resolve</button>`;
+    }
+    if (canManageMedia()) {
+        controls += `<button data-action="media" data-id="${i.incidentId}">Files</button>`;
     }
     if (canDelete()) {
         controls += `<button class="delete-action" data-action="delete" data-id="${i.incidentId}">Delete</button>`;
@@ -1840,6 +1892,125 @@ function closeAudit() {
 
 const auditCloseButton = document.getElementById("auditClose");
 if (auditCloseButton) auditCloseButton.addEventListener("click", () => showView("live"));
+
+
+/* ------------------------------------------------------ incident media -- */
+
+/* S3 is private: uploads and deletes go through the gateway, and every file
+   in the list opens through a short-lived presigned URL. LocalStack provides the
+   same contract offline through the optional `media` Compose profile. */
+
+const mediaOverlay = document.getElementById("mediaOverlay");
+const mediaRows = document.getElementById("mediaRows");
+const mediaTitle = document.getElementById("mediaTitle");
+const mediaFileInput = document.getElementById("mediaFileInput");
+const mediaChooseButton = document.getElementById("mediaChoose");
+const mediaUploadStatus = document.getElementById("mediaUploadStatus");
+let activeMediaIncident = null;
+
+async function openIncidentMedia(incidentId) {
+    if (!mediaOverlay) return;
+    activeMediaIncident = incidentId;
+    if (mediaTitle) mediaTitle.textContent = "Incident #" + incidentId + " media";
+    if (mediaUploadStatus) mediaUploadStatus.textContent = "";
+    mediaOverlay.classList.add("visible");
+    await loadIncidentMedia();
+}
+
+function closeIncidentMedia() {
+    if (mediaOverlay) mediaOverlay.classList.remove("visible");
+    activeMediaIncident = null;
+    if (mediaFileInput) mediaFileInput.value = "";
+    if (mediaUploadStatus) mediaUploadStatus.textContent = "";
+}
+
+async function loadIncidentMedia() {
+    if (!mediaRows || !activeMediaIncident) return;
+    mediaRows.innerHTML = '<div class="audit-empty">Loading…</div>';
+    try {
+        renderIncidentMedia(await api(
+            "/api/incidents/" + activeMediaIncident + "/media"
+        ));
+    } catch (err) {
+        const detail = err.message === "forbidden"
+            ? "Your role cannot view this evidence."
+            : err.message;
+        mediaRows.innerHTML = '<div class="audit-empty">Could not load media: '
+            + escapeHtml(detail) + '</div>';
+    }
+}
+
+function renderIncidentMedia(files) {
+    if (!mediaRows) return;
+    if (!files || !files.length) {
+        mediaRows.innerHTML = '<div class="audit-empty">No photos or clips attached yet.</div>';
+        return;
+    }
+
+    mediaRows.innerHTML = files.map(file => {
+        const size = file.fileSize == null
+            ? ""
+            : (file.fileSize / 1024 / 1024).toFixed(2) + " MB";
+        return `<div class="media-row">
+            <div>
+                <strong>${escapeHtml(file.fileName)}</strong>
+                <small>${escapeHtml(file.mediaType)}${size ? " · " + escapeHtml(size) : ""}</small>
+            </div>
+            <a href="${escapeHtml(file.downloadUrl)}" target="_blank"
+               rel="noopener noreferrer">Open</a>
+            ${canManageMedia() ? `<button type="button" class="delete-action"
+                data-delete-media="${file.mediaId}">Delete</button>` : ""}
+        </div>`;
+    }).join("");
+
+    mediaRows.querySelectorAll("[data-delete-media]").forEach(button => {
+        button.addEventListener("click", async () => {
+            const mediaId = button.getAttribute("data-delete-media");
+            if (!window.confirm("Delete this evidence file permanently?")) return;
+            button.disabled = true;
+            try {
+                await api("/api/incidents/" + activeMediaIncident + "/media/" + mediaId,
+                    { method: "DELETE" });
+                notify("Evidence file deleted.");
+                await loadIncidentMedia();
+            } catch (err) {
+                notify("Could not delete evidence: " + err.message);
+                button.disabled = false;
+            }
+        });
+    });
+}
+
+async function uploadIncidentMedia(file) {
+    if (!file || !activeMediaIncident) return;
+    if (mediaUploadStatus) mediaUploadStatus.textContent = "Uploading…";
+    if (mediaChooseButton) mediaChooseButton.disabled = true;
+    const body = new FormData();
+    body.append("file", file);
+    try {
+        await api("/api/incidents/" + activeMediaIncident + "/media",
+            { method: "POST", body });
+        if (mediaUploadStatus) mediaUploadStatus.textContent = "Uploaded securely.";
+        notify("Evidence uploaded to private storage.");
+        await loadIncidentMedia();
+    } catch (err) {
+        if (mediaUploadStatus) mediaUploadStatus.textContent =
+            "Upload failed: " + err.message;
+    } finally {
+        if (mediaChooseButton) mediaChooseButton.disabled = false;
+        if (mediaFileInput) mediaFileInput.value = "";
+    }
+}
+
+const mediaCloseButton = document.getElementById("mediaClose");
+if (mediaCloseButton) mediaCloseButton.addEventListener("click", closeIncidentMedia);
+
+if (mediaChooseButton && mediaFileInput) {
+    mediaChooseButton.addEventListener("click", () => mediaFileInput.click());
+    mediaFileInput.addEventListener("change", () => {
+        uploadIncidentMedia(mediaFileInput.files && mediaFileInput.files[0]);
+    });
+}
 
 /* ----------------------------------------------------- camera network -- */
 

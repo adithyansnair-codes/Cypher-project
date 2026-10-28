@@ -12,7 +12,8 @@ import java.util.List;
 /**
  * The audit trail (MoSCoW S-06).
  *
- * <p>Restricted to SUPER_ADMIN and ADMIN in {@code SecurityConfig}.
+ * <p>Restricted to SUPER_ADMIN, ADMIN and SECURITY_MANAGER in
+ * {@code SecurityConfig}, matching the seeded AUDIT_READ permission.
  */
 @RestController
 @RequestMapping("/api/audit")

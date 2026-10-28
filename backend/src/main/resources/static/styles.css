@@ -3375,6 +3375,92 @@ footer b {
 
 .incident-actions button:disabled { opacity: .5; cursor: default; }
 
+/* ---------- incident evidence (private S3) ---------- */
+
+.media-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 18px 0;
+}
+
+.media-toolbar button,
+.media-row button,
+.media-row a {
+    padding: 7px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    background: var(--surface-soft);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.media-toolbar button:hover,
+.media-row button:hover,
+.media-row a:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.media-toolbar button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.media-status {
+    color: var(--text-tertiary);
+    font-size: 12px;
+}
+
+.media-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.media-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface-soft);
+}
+
+.media-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    margin-right: auto;
+}
+
+.media-row strong {
+    overflow: hidden;
+    color: var(--text);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.media-row small {
+    color: var(--text-tertiary);
+    font-size: 11px;
+}
+
+.media-row .delete-action {
+    color: var(--red);
+    border-color: rgba(220, 89, 104, .28);
+    background: var(--red-soft);
+}
+
 .incident-id {
     font-family: "DM Mono", monospace;
     font-size: 11px;

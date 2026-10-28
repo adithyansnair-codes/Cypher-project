@@ -54,7 +54,7 @@ by V4 are the same matrix expressed as data.
 | Download reports (`/api/reports/*`) | ✅ | ✅ | ✅ | ✅ | ✅ | – |
 | Add / edit cameras and projects | ✅ | ✅ | ✅ | – | – | – |
 | Delete a camera | ✅ | ✅ | – | – | – | – |
-| Read the audit trail (`/api/audit`) | ✅ | ✅ | – | – | – | – |
+| Read the audit trail (`/api/audit`) | ✅ | ✅ | ✅ | – | – | – |
 | User directory (`/users/*`) | ✅ | ✅ | – | – | – | – |
 
 Registration always creates a **VIEWER**; elevated roles are assigned by an
@@ -135,6 +135,31 @@ Permanently removes an incident. `SUPER_ADMIN` and `ADMIN` only. Alert and
 media rows are removed by their existing `ON DELETE CASCADE` constraints; the
 detector history remains available to analytics. Returns `204` on success or
 `404` when the incident does not exist.
+
+### Incident evidence in private S3
+
+Evidence is uploaded through the gateway and stored under
+`s3://<bucket>/cypher/incidents/incident-<id>/`. Buckets are private; downloads
+use URLs signed for ten minutes. Uploads are accepted only for JPEG, PNG, WebP
+and MP4 files up to 25 MB.
+
+| Method | Path | Required role |
+|---|---|---|
+| `POST` | `/api/incidents/{id}/media` | `SUPER_ADMIN`, `ADMIN`, `SECURITY_MANAGER`, `OPERATOR` |
+| `GET` | `/api/incidents/{id}/media` | any authenticated, active role |
+| `DELETE` | `/api/incidents/{id}/media/{mediaId}` | `SUPER_ADMIN`, `ADMIN`, `SECURITY_MANAGER`, `OPERATOR` |
+
+Upload uses `multipart/form-data` with one field named `file`:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  -F "file=@evidence.jpg;type=image/jpeg" \
+  "$BASE/api/incidents/42/media"
+```
+
+The response contains the generated media id, original name, byte size and a
+ten-minute `downloadUrl`. If `S3_BUCKET` is not configured, media routes return
+`503` while the rest of CYPHER remains operational.
 
 ### `POST /api/incidents/ingest` — the AI engine's entry point (MoSCoW M-05)
 
@@ -258,8 +283,8 @@ The signed-in operator, so the cockpit can name them and size up their rights.
 
 The audit trail, newest first (MoSCoW S-06). Rows are written by the
 `trg_incident_changes` database trigger, so they exist whatever made the change
-— the API, the AI engine or psql. `SUPER_ADMIN` and `ADMIN` only; anyone else
-gets `403`.
+— the API, the AI engine or psql. `SUPER_ADMIN`, `ADMIN` and
+`SECURITY_MANAGER` only; anyone else gets `403`.
 
 ```json
 [ { "auditId": 12, "eventType": "UPDATE", "entityName": "incidents", "entityId": 3,
@@ -350,6 +375,19 @@ Validation failures return the field names and messages:
 ```
 
 Stack traces are never returned.
+
+## Operational endpoints
+
+| Endpoint | Purpose | Auth |
+|---|---|---|
+| `GET /health` | application liveness | public |
+| `GET /actuator/health` | Spring Boot health groups | public |
+| `GET /actuator/prometheus` | Prometheus/OpenMetrics scrape | public on the application network |
+
+The cockpit default detector source is the browser webcam in the ML workspace;
+uploads and bundled evidence images are available for deterministic
+demonstrations. The ESP32-CAM MJPEG URL is configured on a camera row and is not
+the source used by the separately trained YOLOv8s demo model.
 
 ---
 

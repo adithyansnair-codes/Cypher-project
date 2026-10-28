@@ -32,6 +32,7 @@ gateway so one `.env` serves both:
 |---|---|
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | `localhost` / `5432` / `cypher` |
 | `DB_USER` / `DB_PASSWORD` | `cypher_user` / `proj577!` |
+| `REPORTING_BIND` | `127.0.0.1` (`0.0.0.0` in Compose) |
 | `REPORTING_PORT` | `5001` |
 
 ## Libraries
@@ -42,7 +43,12 @@ gateway so one `.env` serves both:
 | ClosedXML | .xlsx without Excel installed |
 | QuestPDF | PDF layout (community licence, set in `Program.cs`) |
 
-## Not done yet
+## Deployment
 
-- Archiving generated media/snapshots to S3 (`media` table exists, no bucket)
-- Email / SMS dispatch — deliberately deferred (MoSCoW `C-06`)
+The root `docker-compose.yml` builds this service into the private application
+network and the gateway reaches it at `http://reporting:5001`; it is not
+published to the host. Media evidence is managed by the Spring Boot gateway and
+stored in private S3 (`POST /api/incidents/{id}/media`).
+
+Email / SMS dispatch remains deliberately deferred (MoSCoW `C-06`) and is not
+claimed as part of the implemented system.
