@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListEvidencePrefix",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::cypher-da2-backups-587748224148",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "cypher/incidents/",
+            "cypher/incidents/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ReadWriteDeleteEvidenceObjects",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::cypher-da2-backups-587748224148/cypher/incidents/*"
+    }
+  ]
+}

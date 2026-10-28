@@ -81,7 +81,14 @@ EC2 instance role.
 
 ## AWS S3
 
-On an EC2 instance with AWS CLI access:
+The existing private bucket `cypher-da2-backups-587748224148` can hold incident
+evidence under the isolated prefix `cypher/incidents/`. An AWS administrator
+can attach `infra/aws/s3-evidence-access-policy.json` as an inline identity
+policy on `cypher-da2-ec2-role`. The policy grants only list access to that
+prefix and get, put and delete on its objects.
+
+For a separate evidence bucket, run the bootstrap helper from an EC2 instance
+with bucket-administration access:
 
 ```bash
 chmod +x infra/aws/bootstrap-s3.sh
@@ -98,7 +105,15 @@ AWS_REGION=ap-south-1
 S3_MEDIA_PREFIX=cypher/incidents
 ```
 
-Add those values to the backend service environment, restart the service, and
+For the existing bucket, use:
+
+```text
+S3_BUCKET=cypher-da2-backups-587748224148
+AWS_REGION=ap-south-1
+S3_MEDIA_PREFIX=cypher/incidents
+```
+
+Add the selected values to the backend service environment, restart the service, and
 verify an authenticated upload, signed download and delete through the media
 endpoints in [API.md](API.md). No access keys are stored in the repository.
 
