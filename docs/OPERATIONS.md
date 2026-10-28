@@ -57,8 +57,9 @@ DB_PASSWORD=compose-parse-only JWT_SECRET=compose-parse-only \
   -f docker-compose.aws-monitoring.yml up -d --no-deps prometheus grafana
 ```
 
-Through code-server, the dashboards are available at `/proxy/3000/` and raw
-Prometheus at `/proxy/9090/`.
+Through code-server, Grafana is available at `/absproxy/3000/`. The absolute
+proxy preserves Grafana's configured subpath; raw Prometheus is available at
+`/proxy/9090/`.
 
 ## Offline S3 evidence demo
 
