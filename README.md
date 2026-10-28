@@ -101,8 +101,8 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 
 ### Frontend
 
-- React
-- TypeScript
+- Browser cockpit served directly by Spring Boot
+- HTML, CSS and JavaScript
 
 ### AI and Computer Vision
 
@@ -140,9 +140,13 @@ To build an intelligent, secure, and scalable platform that combines modern auth
 
 ## 🏗️ System Architecture
 
-The CYPHER platform follows a three-tier architecture consisting of a React frontend, a Spring Boot backend, and a PostgreSQL database. Authentication is secured using JWT and Spring Security, while the backend is deployed on AWS EC2.
+The CYPHER platform follows a layered architecture with a browser cockpit, a
+Spring Boot gateway, relational persistence, a private reporting worker and an
+AI detection service. Authentication is secured with JWT and Spring Security.
+The local stack uses PostgreSQL 16; the separate AWS DA2 deployment uses Amazon
+RDS for MySQL.
 
-![System Architecture](docs/architecture/architecture.png)
+![System Architecture](docs/design/architecture/architecture.png)
 
 ---
 

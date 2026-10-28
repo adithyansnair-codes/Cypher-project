@@ -128,6 +128,12 @@ Open `http://localhost:8088`, sign in as `admin` with
 `JENKINS_ADMIN_PASSWORD`, and run `cypher-ci`. Jenkins state survives container
 restarts in the `cypher_jenkins_home` volume.
 
+Run the Jenkins controller on a machine with at least 4 GB of memory. The
+project's 1 GB AWS DA2 instance is sized for the application, not for a Jenkins
+controller plus a build agent. Build #2 of `cypher-ci` succeeded on the
+development Mac with six backend tests, the .NET 10 reporting build and all
+repository checks.
+
 ## Observability contract
 
 Prometheus scrapes `backend:8081/actuator/prometheus` every five seconds.
