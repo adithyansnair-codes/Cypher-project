@@ -1,0 +1,16 @@
+# Monitoring for the systemd-managed MySQL/DA2 backend on EC2:
+#
+#   docker compose -f docker-compose.yml \
+#     -f docker-compose.aws-monitoring.yml \
+#     up -d --no-deps prometheus grafana
+
+services:
+  prometheus:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./monitoring/prometheus/prometheus.aws.yml:/etc/prometheus/prometheus.yml:ro
+      - cypher_prometheus_data:/prometheus
+
+  grafana:
+    depends_on: []

@@ -48,6 +48,18 @@ The provisioned `CYPHER Operations Overview` dashboard is the Grafana home page
 for anonymous viewers. It shows open incidents, request rate, 5xx responses,
 JVM heap, incidents by severity, operator actions and HTTP latency.
 
+On the systemd-managed AWS deployment, start only monitoring and scrape the
+host gateway without creating a second copy of the application:
+
+```bash
+DB_PASSWORD=compose-parse-only JWT_SECRET=compose-parse-only \
+  docker compose -f docker-compose.yml \
+  -f docker-compose.aws-monitoring.yml up -d --no-deps prometheus grafana
+```
+
+Through code-server, the dashboards are available at `/proxy/3000/` and raw
+Prometheus at `/proxy/9090/`.
+
 ## Offline S3 evidence demo
 
 The normal application remains available without internet access; only S3
