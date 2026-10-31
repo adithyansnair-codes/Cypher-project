@@ -6,6 +6,10 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +32,9 @@ public class AnalyticsService {
             """;
 
     private static final String PER_DAY = """
-            SELECT to_char(date_trunc('day', occurred_at), 'YYYY-MM-DD') AS day, COUNT(*)
+            SELECT CAST(occurred_at AS DATE) AS day, COUNT(*)
               FROM incidents
-             WHERE occurred_at >= date_trunc('day', NOW()) - INTERVAL '6 days'
+             WHERE occurred_at >= :since
              GROUP BY day
              ORDER BY day
             """;
@@ -50,7 +54,10 @@ public class AnalyticsService {
                 perDay(),
                 counts(CAMERAS_BY_STATUS),
                 scalar("SELECT COUNT(*) FROM detections"),
-                scalar("SELECT COUNT(*) FROM detections WHERE detected_at >= NOW() - INTERVAL '7 days'"),
+                ((Number) entityManager.createNativeQuery(
+                        "SELECT COUNT(*) FROM detections WHERE detected_at >= :since")
+                        .setParameter("since", Instant.now().minus(7, ChronoUnit.DAYS))
+                        .getSingleResult()).longValue(),
                 scalar("SELECT COUNT(*) FROM incidents"));
     }
 
@@ -66,7 +73,9 @@ public class AnalyticsService {
 
     @SuppressWarnings("unchecked")
     private List<AnalyticsResponse.DayCount> perDay() {
-        List<Object[]> rows = entityManager.createNativeQuery(PER_DAY).getResultList();
+        List<Object[]> rows = entityManager.createNativeQuery(PER_DAY)
+                .setParameter("since", LocalDate.now(ZoneOffset.UTC).minusDays(6)
+                        .atStartOfDay(ZoneOffset.UTC).toInstant()).getResultList();
         return rows.stream()
                 .map(row -> new AnalyticsResponse.DayCount(
                         String.valueOf(row[0]), ((Number) row[1]).longValue()))

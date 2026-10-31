@@ -4,6 +4,9 @@ import com.cypher.backend.entity.Incident;
 import com.cypher.backend.repository.IncidentRepository;
 import com.cypher.backend.security.JwtService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -22,10 +25,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class SecurityAccessTests {
+@Transactional
+class SecurityAccessTests extends DatabaseTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @BeforeEach
+    void seedIncident() {
+        long camera = TestData.camera(jdbc);
+        jdbc.update("""
+                INSERT INTO incidents (project_id, camera_id, title, severity, status, occurred_at)
+                SELECT project_id, camera_id, 'Test incident', 'HIGH', 'OPEN', CURRENT_TIMESTAMP
+                FROM cameras WHERE camera_id = ?
+                """, camera);
+    }
+
 
     @Autowired
     private IncidentRepository incidents;

@@ -974,7 +974,7 @@
                 <h4>Six-class detector</h4>
                 <p class="ml-demo-lead">
                     The headline number is a fixed held-out weapon comparison.
-                    Six-class behaviour is reported separately and honestly.
+                    The six-class validation result uses a different dataset.
                 </p>
 
                 <div class="ml-metrics">
@@ -997,7 +997,7 @@
                     <i>→</i>
                     <span>per-class dedupe</span>
                     <i>→</i>
-                    <span>8-frame confirmation</span>
+                    <span>video confirmation / image review</span>
                     <i>→</i>
                     <span>gateway severity</span>
                 </div>
@@ -1355,6 +1355,7 @@
     </form>
 </div>
 
+<script src="detection-policy.js"></script>
 <script>
 
 
@@ -2276,7 +2277,10 @@ let mlWebcamStream = null;
 let mlMonitorTimer = null;
 let mlMonitorActive = false;
 let mlMonitorFrame = 0;
-let mlMonitorStreak = {};
+const mlPolicy = new CypherDetectionPolicy();
+let mlGeneration = 0;
+let mlAbort = null;
+let mlAnalyzedDetections = [];
 let mlMonitorTrace = [];
 
 function openMlDemo() {
@@ -2396,6 +2400,10 @@ function describeDetections(detections) {
 }
 
 function stopMlMonitoring() {
+    mlGeneration += 1;
+    if (mlAbort) mlAbort.abort();
+    mlAbort = null;
+    mlPolicy.clearStreaks();
     mlMonitorActive = false;
     if (mlMonitorTimer) {
         clearTimeout(mlMonitorTimer);
@@ -2437,10 +2445,16 @@ async function startMlWebcam() {
         stopMlWebcam();
         mlSelectedFile = null;
         if (mlDemoFile) mlDemoFile.value = "";
-        mlWebcamStream = await navigator.mediaDevices.getUserMedia({
+        const generation = mlGeneration;
+        const stream = await navigator.mediaDevices.getUserMedia({
             audio: false,
             video: { width: { ideal: 1280 }, height: { ideal: 720 } }
         });
+        if (generation !== mlGeneration) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+        mlWebcamStream = stream;
         mlWebcamPreview.srcObject = mlWebcamStream;
         mlWebcamPreview.hidden = false;
         mlDemoPreview.hidden = true;
@@ -2524,10 +2538,11 @@ async function drawDetectionResult(blob, detections) {
         : "Captured frame · no detection";
 }
 
-async function submitDetectionIncident(label, detection, traceSteps, cameraId) {
+async function submitDetectionIncident(label, detection, traceSteps, cameraId, signal) {
     const confidence = Number(detection.confidence);
     return api("/api/incidents/ingest", {
         method: "POST",
+        signal,
         body: JSON.stringify({
             cameraId: Number(cameraId),
             title: label.charAt(0).toUpperCase() + label.slice(1) + " detected",
@@ -2541,90 +2556,69 @@ async function submitDetectionIncident(label, detection, traceSteps, cameraId) {
             threshold: mlWebcamStream ? 0.20 : 0.35,
             source: mlWebcamStream ? "Mac webcam" : mlAnalyzedName,
             trace: traceSteps.concat([
-                "browser: object present in 8 consecutive frames",
                 "decision: submit to the gateway for severity grading"
             ])
         })
     });
 }
 
-async function monitorMlFrame() {
-    if (!mlMonitorActive || !mlWebcamStream) return;
+async function monitorMlFrame(generation = mlGeneration) {
+    const active = () => mlMonitorActive && mlWebcamStream && generation === mlGeneration;
+    if (!active()) return;
+    const signal = mlAbort.signal;
+    const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
     mlMonitorFrame += 1;
-
     try {
         const blob = await captureWebcamBlob();
+        if (!active()) return;
         const form = new FormData();
         form.append("file", blob, "webcam-frame.jpg");
         const response = await fetch(ML_ENGINE + "/detect?conf=0.20&webcam=true",
-                                     { method: "POST", body: form });
+                                     { method: "POST", body: form, signal });
         if (!response.ok) throw new Error("Inference failed with status " + response.status);
         const result = await response.json();
+        if (!active()) return;
         const detections = result.detections || [];
-        const liveDetections = detections.filter(
-            detection => ML_LIVE_CLASSES.has(detection.label)
-        );
-        const unique = bestDetectionsByClass(liveDetections);
-        const present = new Set(unique.map(detection => detection.label));
-
-        Object.keys(mlMonitorStreak).forEach(label => {
-            if (!present.has(label)) mlMonitorStreak[label] = 0;
-        });
-        unique.forEach(detection => {
-            const label = detection.label;
-            mlMonitorStreak[label] = (mlMonitorStreak[label] || 0) + 1;
-        });
-
+        const reportable = detections.filter(detection => ML_LIVE_CLASSES.has(detection.label));
+        const ready = mlPolicy.observe(cameraId, reportable);
         await drawDetectionResult(blob, detections);
-        const strongest = unique.slice().sort(
-            (a, b) => Number(b.confidence) - Number(a.confidence)
-        )[0];
-        if (strongest) {
-            mlAnalyzedBlob = blob;
-            mlAnalyzedName = "webcam-frame.jpg";
-        }
-        const streak = strongest ? mlMonitorStreak[strongest.label] || 0 : 0;
-        const line = "Live frame " + mlMonitorFrame + " · "
-            + describeDetections(detections) + " · incident streak " + streak + "/8";
-        mlMonitorTrace.push(line);
+        if (!active()) return;
+        const streak = Math.max(0, ...Object.values(mlPolicy.state(cameraId).streak));
+        mlMonitorTrace.push("Live frame " + mlMonitorFrame + " · "
+            + describeDetections(detections) + " · incident streak " + Math.min(8, streak) + "/8");
         mlMonitorTrace = mlMonitorTrace.slice(-6);
-        if (mlDemoLog) mlDemoLog.textContent = mlMonitorTrace.join("\n");
-        if (mlDemoProgress) mlDemoProgress.value = Math.min(8, streak);
-        if (mlProgressText) mlProgressText.textContent = Math.min(8, streak) + " / 8 frames";
-
-        const confirmed = strongest && mlMonitorStreak[strongest.label] >= 8
-            ? strongest.label
-            : Object.keys(mlMonitorStreak).find(
-                label => mlMonitorStreak[label] >= 8
-            );
-        if (confirmed) {
-            stopMlMonitoring();
-            const chosen = unique.find(detection => detection.label === confirmed) || strongest;
-            const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
-            const incident = await submitDetectionIncident(
-                confirmed, chosen, mlMonitorTrace, cameraId
-            );
-            document.getElementById("mlResultTitle").textContent =
-                incident.title + " · incident #" + incident.incidentId;
-            document.getElementById("mlResultSeverity").textContent = incident.severity;
-            document.getElementById("mlResultDetail").textContent =
-                "Detected at " + Number(chosen.confidence).toFixed(1) + "% confidence. "
-                + "The gateway graded this event as " + incident.severity + ".";
-            mlDemoResult.hidden = false;
-            await refreshAll();
-            notify(incident.severity + " incident #" + incident.incidentId + " created.");
-            return;
+        mlDemoLog.textContent = mlMonitorTrace.join("\n");
+        mlDemoProgress.value = Math.min(8, streak);
+        mlProgressText.textContent = Math.min(8, streak) + " / 8 frames";
+        for (const detection of ready) {
+            if (!active()) return;
+            const incident = await submitDetectionIncident(detection.label, detection,
+                mlMonitorTrace.concat("Confirmed on 8 consecutive webcam frames"), cameraId, signal);
+            mlPolicy.markReported(cameraId, detection.label);
+            if (!active()) return;
+            showMlIncident(incident, detection);
+            notify(incident.severity + " incident #" + incident.incidentId + " created. Monitoring continues.");
         }
+        if (ready.length && active()) await refreshAll();
     } catch (err) {
+        if (!active() || err.name === "AbortError") return;
         stopMlMonitoring();
-        if (mlDemoLog) mlDemoLog.textContent = "Live detection error: " + err.message;
+        mlDemoLog.textContent = "Live detection stopped: " + err.message + ". Press Start to retry.";
         return;
     }
+    if (active()) mlMonitorTimer = setTimeout(() => monitorMlFrame(generation), 450);
+}
 
-    mlMonitorTimer = setTimeout(monitorMlFrame, 450);
+function showMlIncident(incident, detection) {
+    document.getElementById("mlResultTitle").textContent = incident.title + " · incident #" + incident.incidentId;
+    document.getElementById("mlResultSeverity").textContent = incident.severity;
+    document.getElementById("mlResultDetail").textContent =
+        "Detected at " + Number(detection.confidence).toFixed(1) + "% confidence. Review the scene before taking action.";
+    mlDemoResult.hidden = false;
 }
 
 async function startMlMonitoring() {
+    const generation = mlGeneration;
     if (!mlWebcamStream) {
         notify("Start the Mac webcam first.");
         return;
@@ -2634,16 +2628,18 @@ async function startMlMonitoring() {
         return;
     }
 
+    if (generation !== mlGeneration || !mlWebcamStream) return;
+    stopMlMonitoring();
+    mlAbort = new AbortController();
     mlMonitorActive = true;
     mlMonitorFrame = 0;
-    mlMonitorStreak = {};
     mlMonitorTrace = [];
     mlAnalyzedBlob = null;
     mlDemoResult.hidden = true;
     mlRaiseIncident.hidden = true;
     mlDemoProgress.value = 0;
     mlProgressText.textContent = "0 / 8 frames";
-    mlDemoLog.textContent = "Live detection started. Hold the knife clearly in frame.";
+    mlDemoLog.textContent = "Live detection started. Confirmed events have a 90-second cooldown per class and camera.";
     mlMonitorStart.hidden = true;
     mlMonitorStop.hidden = false;
     monitorMlFrame();
@@ -2679,6 +2675,7 @@ if (mlDemoReset) {
     mlDemoReset.addEventListener("click", async () => {
         const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
         stopMlWebcam();
+        mlPolicy.reset(cameraId);
         try {
             await fetch(ML_ENGINE + "/demo/reset?camera_id=" + encodeURIComponent(cameraId),
                         { method: "POST" });
@@ -2701,11 +2698,17 @@ if (mlDemoReset) {
 
 if (mlDemoRun) {
     mlDemoRun.addEventListener("click", async () => {
+        const requestedGeneration = mlGeneration;
         if (!(await checkMlEngine())) {
             notify("The AI engine is not reachable.");
             return;
         }
+        if (requestedGeneration !== mlGeneration) return;
         stopMlMonitoring();
+        const generation = mlGeneration;
+        mlAbort = new AbortController();
+        const signal = mlAbort.signal;
+        mlAnalyzedDetections = [];
         mlDemoRun.disabled = true;
         mlDemoRun.textContent = "Analyzing…";
         mlDemoResult.hidden = true;
@@ -2718,15 +2721,16 @@ if (mlDemoRun) {
                 mlAnalyzedName = mlSelectedFile.name;
                 const form = new FormData();
                 form.append("file", mlAnalyzedBlob, mlAnalyzedName);
-                const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form });
+                const response = await fetch(ML_ENGINE + "/detect", { method: "POST", body: form, signal });
                 if (!response.ok) throw new Error("Inference failed with status " + response.status);
                 const result = await response.json();
+                if (generation !== mlGeneration) return;
                 detections = result.detections || [];
                 mlDemoLog.textContent = describeDetections(detections);
             } else if (mlWebcamStream) {
                 mlAnalyzedName = "webcam-frame.jpg";
                 const counts = {};
-                const best = {};
+                let bestFrameDetections = [];
                 let bestBlob = null;
                 let bestScore = -1;
 
@@ -2735,16 +2739,14 @@ if (mlDemoRun) {
                     const form = new FormData();
                     form.append("file", blob, mlAnalyzedName);
                     const response = await fetch(ML_ENGINE + "/detect?conf=0.20&webcam=true",
-                                                 { method: "POST", body: form });
+                                                 { method: "POST", body: form, signal });
                     if (!response.ok) throw new Error("Inference failed with status " + response.status);
                     const result = await response.json();
+                if (generation !== mlGeneration) return;
                     const frameDetections = result.detections || [];
-                    frameDetections.forEach(detection => {
+                    bestDetectionsByClass(frameDetections).forEach(detection => {
                         const label = String(detection.label || "").toLowerCase();
                         counts[label] = (counts[label] || 0) + 1;
-                        if (!best[label] || Number(detection.confidence) > Number(best[label].confidence)) {
-                            best[label] = detection;
-                        }
                     });
                     const score = frameDetections.length
                         ? Math.max(...frameDetections.map(d => Number(d.confidence) || 0))
@@ -2752,6 +2754,7 @@ if (mlDemoRun) {
                     if (score > bestScore) {
                         bestScore = score;
                         bestBlob = blob;
+                        bestFrameDetections = frameDetections;
                     }
                     mlDemoLog.textContent = "Webcam sample " + sample + "/5 · "
                         + describeDetections(frameDetections);
@@ -2760,22 +2763,23 @@ if (mlDemoRun) {
 
                 mlAnalyzedBlob = bestBlob;
                 // A webcam result must be stable in at least two of five samples.
-                detections = Object.entries(counts)
-                    .filter(([, count]) => count >= 2)
-                    .map(([label]) => best[label]);
+                detections = bestFrameDetections.filter(detection => counts[detection.label] >= 2);
                 mlDemoLog.textContent = "Stable webcam result: " + describeDetections(detections);
             } else {
                 notify("Choose an image or start the webcam first.");
                 return;
             }
 
+            if (generation !== mlGeneration) return;
+            mlAnalyzedDetections = bestDetectionsByClass(detections).filter(d => ML_LIVE_CLASSES.has(d.label));
             await drawDetectionResult(mlAnalyzedBlob, detections);
-            if (detections.length) {
+            if (generation !== mlGeneration) return;
+            if (mlAnalyzedDetections.length) {
                 mlRaiseIncident.hidden = false;
                 mlDemoLog.textContent += "\nReview the result, then confirm it if you want an incident.";
             }
         } catch (err) {
-            mlDemoLog.textContent = "ERROR: " + err.message;
+            if (generation === mlGeneration) mlDemoLog.textContent = "ERROR: " + err.message;
         } finally {
             mlDemoRun.disabled = false;
             mlDemoRun.textContent = mlWebcamStream ? "Analyze webcam frame" : "Analyze selected image";
@@ -2785,89 +2789,66 @@ if (mlDemoRun) {
 
 if (mlRaiseIncident) {
     mlRaiseIncident.addEventListener("click", async () => {
-        if (!(await checkMlEngine()) || !mlAnalyzedBlob) {
-            notify("Analyze an image or webcam frame first.");
-            return;
-        }
-
+        if (!mlAnalyzedBlob || !mlAnalyzedDetections.length || mlRaiseIncident.disabled) return;
         const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
+        const generation = mlGeneration;
+        mlAbort = new AbortController();
+        const signal = mlAbort.signal;
+        const live = Boolean(mlWebcamStream);
         mlRaiseIncident.disabled = true;
-        mlRaiseIncident.textContent = "Confirming over 8 frames…";
-        mlDemoLog.textContent = "Running the eight-frame confirmation rule…";
-        mlDemoProgress.value = 0;
-        mlProgressText.textContent = "0 / 8 frames";
-
+        mlRaiseIncident.textContent = live ? "Checking 8 webcam frames…" : "Creating incident…";
         try {
-            const streak = {};
-            const best = {};
-            const traceSteps = [];
-            let confirmedLabel = null;
-
-            for (let frame = 1; frame <= 8; frame += 1) {
-                const frameBlob = mlWebcamStream
-                    ? await captureWebcamBlob()
-                    : mlAnalyzedBlob;
-                const form = new FormData();
-                form.append("file", frameBlob, mlAnalyzedName);
-                const detectUrl = ML_ENGINE + "/detect"
-                    + (mlWebcamStream ? "?conf=0.20&webcam=true" : "");
-                const response = await fetch(detectUrl, { method: "POST", body: form });
-                if (!response.ok) throw new Error("Inference failed with status " + response.status);
-                const result = await response.json();
-                const frameDetections = result.detections || [];
-                const unique = bestDetectionsByClass(frameDetections);
-                const present = new Set(unique.map(detection => detection.label));
-
-                Object.keys(streak).forEach(label => {
-                    if (!present.has(label)) streak[label] = 0;
-                });
-                unique.forEach(detection => {
-                    const label = detection.label;
-                    streak[label] = (streak[label] || 0) + 1;
-                    if (!best[label] || Number(detection.confidence) > Number(best[label].confidence)) {
-                        best[label] = detection;
-                    }
-                    if (streak[label] >= 8) confirmedLabel = label;
-                });
-
-                const summary = describeDetections(frameDetections);
-                traceSteps.push("browser frame " + frame + "/8: " + summary);
-                setMlProgress(frame, "Frame " + frame + "/8 · " + summary
-                    + (confirmedLabel ? " · confirmed" : " · holding"));
-                if (confirmedLabel) {
-                    break;
+            let confirmed = mlAnalyzedDetections;
+            const trace = [];
+            if (live) {
+                const confirmation = new CypherDetectionPolicy();
+                for (let frame = 1; frame <= 8; frame++) {
+                    const blob = await captureWebcamBlob();
+                    if (generation !== mlGeneration) return;
+                    const form = new FormData();
+                    form.append("file", blob, "webcam-frame.jpg");
+                    const response = await fetch(ML_ENGINE + "/detect?conf=0.20&webcam=true",
+                        { method: "POST", body: form, signal });
+                    if (!response.ok) throw new Error("Inference failed with status " + response.status);
+                    const result = await response.json();
+                    if (generation !== mlGeneration) return;
+                    confirmed = confirmation.observe(cameraId,
+                        (result.detections || []).filter(d => ML_LIVE_CLASSES.has(d.label)));
+                    trace.push("Webcam frame " + frame + "/8: " + describeDetections(result.detections || []));
+                    setMlProgress(frame, trace[trace.length - 1]);
+                    if (frame < 8) await new Promise(resolve => setTimeout(resolve, 120));
                 }
-                await new Promise(resolve => setTimeout(resolve, 120));
+                if (!confirmed.length) throw new Error("No reportable class appeared in all eight webcam frames.");
+                trace.push("Confirmed on 8 consecutive webcam frames");
+            } else {
+                trace.push("Single uploaded image: " + mlAnalyzedName,
+                    "Operator reviewed and confirmed the image result; no temporal confirmation");
             }
-
-            if (!confirmedLabel) {
-                throw new Error("The object was not detected for eight consecutive frames. "
-                    + "Hold it steady, fill more of the frame and try again.");
+            for (const detection of confirmed) {
+                if (generation !== mlGeneration) return;
+                const incident = await submitDetectionIncident(detection.label, detection, trace, cameraId, signal);
+                mlPolicy.markReported(cameraId, detection.label);
+                if (generation !== mlGeneration) return;
+                showMlIncident(incident, detection);
+                // Remove successful submissions so retrying a failed class cannot duplicate them.
+                mlAnalyzedDetections = mlAnalyzedDetections.filter(d => d.label !== detection.label);
+                notify(incident.severity + " incident #" + incident.incidentId + " created.");
             }
-
-            const detection = best[confirmedLabel];
-            const confidence = Number(detection.confidence);
-            const incident = await submitDetectionIncident(
-                confirmedLabel, detection, traceSteps, cameraId
-            );
-
-            document.getElementById("mlResultTitle").textContent =
-                incident.title + " · incident #" + incident.incidentId;
-            document.getElementById("mlResultSeverity").textContent = incident.severity;
-            document.getElementById("mlResultDetail").textContent =
-                "Detected at " + confidence.toFixed(1) + "% confidence. "
-                + "The gateway graded this event as " + incident.severity + ".";
-            mlDemoResult.hidden = false;
+            mlRaiseIncident.hidden = true;
             await refreshAll();
-            notify(incident.severity + " incident #" + incident.incidentId + " created.");
         } catch (err) {
-            mlDemoLog.textContent += "\nERROR: " + err.message;
+            if (generation === mlGeneration) mlDemoLog.textContent += "\nERROR: " + err.message;
         } finally {
             mlRaiseIncident.disabled = false;
             mlRaiseIncident.textContent = "Confirm detection and raise incident";
         }
     });
 }
+
+if (mlDemoCamera) mlDemoCamera.addEventListener("change", () => {
+    stopMlMonitoring();
+    mlDemoLog.textContent = "Camera changed. Start monitoring to use the selected camera.";
+});
 
 const mlDemoCloseButton = document.getElementById("mlDemoClose");
 if (mlDemoCloseButton) mlDemoCloseButton.addEventListener("click", () => showView("live"));
@@ -2885,7 +2866,7 @@ if (mlResultGoLive) {
 /* The algorithm, running. The AI engine streams its reasoning over
    POST /api/trace (throttled to one line every 1.5 s per camera, decisions
    always) and the gateway adds its own steps when an incident lands: the rule
-   that graded it, the stored procedure, the broadcast. Nothing here is
+   that graded it, the database transaction, the broadcast. Nothing here is
    simulated - if the pipeline is quiet, this is quiet. */
 
 const traceOverlay = document.getElementById("traceOverlay");

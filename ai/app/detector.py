@@ -1,7 +1,6 @@
 """YOLO detector wrapper.
 
-Fine-tuned weights if present, otherwise the stock COCO model so the service
-still runs (and can still detect people) before training has finished.
+Loads the trained weights specified by YOLO_WEIGHTS.
 """
 from __future__ import annotations
 
@@ -22,13 +21,10 @@ COCO_PERSON = 0
 class Detector:
     def __init__(self) -> None:
         weights = settings.WEIGHTS
-        if not Path(weights).exists():
-            log.warning(
-                "fine-tuned weights not found at %s -- falling back to yolov8n.pt "
-                "(stock COCO model: detects people, not weapons)",
-                weights,
+        if not Path(weights).is_file():
+            raise FileNotFoundError(
+                f"Trained weights not found: {weights}. Set YOLO_WEIGHTS to best.pt."
             )
-            weights = "yolov8n.pt"
 
         self.model = YOLO(weights)
         self.person_model = (

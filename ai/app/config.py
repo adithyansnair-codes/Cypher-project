@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRATCH = ROOT.parent
+SCRATCH = Path(os.getenv("CYPHER_DATA_DIR", str(ROOT / "data")))
 DEFAULT_WEIGHTS = SCRATCH / "training/runs/cypher-v3-6class/weights/best.pt"
 DEFAULT_PERSON_WEIGHTS = SCRATCH / "training/weights/yolov8s.pt"
 
@@ -30,7 +30,7 @@ class Settings:
     PERSON_WEIGHTS: str = os.getenv("PERSON_WEIGHTS", str(DEFAULT_PERSON_WEIGHTS))
 
     # Minimum confidence before a detection is reported as an incident.
-    CONFIDENCE: float = float(os.getenv("YOLO_CONFIDENCE", "0.45"))
+    CONFIDENCE: float = float(os.getenv("YOLO_CONFIDENCE", "0.35"))
 
     # Match the resolution used to train and evaluate the current model.
     IMG_SIZE: int = int(os.getenv("YOLO_IMGSZ", "640"))
@@ -44,10 +44,6 @@ class Settings:
     # ---- behaviour ---------------------------------------------------------
     # Seconds before the same object class on the same camera may raise another
     # incident. Without this a 30 fps stream would create 30 incidents a second.
-    #
-    # 90s rather than 30s: in a 45-second run this created three incidents for
-    # two object classes, which fills the operator's stream with duplicates
-    # during a demo.
     COOLDOWN_SECONDS: int = int(os.getenv("INCIDENT_COOLDOWN", "90"))
 
     # Object classes the gateway treats as CRITICAL. Kept here only for logging;

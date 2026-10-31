@@ -1,0 +1,1 @@
+../../backend/src/main/resources/static/detection-policy.js

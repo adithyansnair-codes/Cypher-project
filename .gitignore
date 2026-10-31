@@ -35,3 +35,12 @@ obj/
 *.backup
 *.backup-*
 *.tsbuildinfo
+
+# Python and local runtime files
+__pycache__/
+*.pyc
+.venv/
+.runtime/
+data/
+.env.*
+!.env.example

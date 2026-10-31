@@ -27,11 +27,11 @@ public class AuditService {
                    a.entity_name,
                    a.entity_id,
                    COALESCE(
-                       NULLIF(TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), ''),
+                       NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))), ''),
                        u.email,
                        'system') AS actor,
-                   a.new_values ->> 'status'   AS status,
-                   a.new_values ->> 'severity' AS severity,
+                   %s   AS status,
+                   %s AS severity,
                    a.created_at
               FROM audit_logs a
               LEFT JOIN users u ON u.user_id = a.user_id
@@ -42,12 +42,18 @@ public class AuditService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    private final DatabaseDialect dialect;
+
+    public AuditService(DatabaseDialect dialect) {
+        this.dialect = dialect;
+    }
+
     /** Newest first, capped so one request cannot pull the whole table. */
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<AuditEntryResponse> recent(int limit) {
         List<Object[]> rows = entityManager
-                .createNativeQuery(RECENT)
+                .createNativeQuery(RECENT.formatted(dialect.auditField("status"), dialect.auditField("severity")))
                 .setParameter("limit", Math.clamp(limit, 1, 500))
                 .getResultList();
 
@@ -73,6 +79,7 @@ public class AuditService {
         return switch (value) {
             case null -> null;
             case Instant instant -> instant;
+            case java.time.LocalDateTime date -> date.toInstant(java.time.ZoneOffset.UTC);
             case Timestamp timestamp -> timestamp.toInstant();
             case java.util.Date date -> date.toInstant();
             default -> null;

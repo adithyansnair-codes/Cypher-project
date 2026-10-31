@@ -9,7 +9,7 @@ photo / camera
     -> YOLOv8s detection
     -> class-aware NMS
     -> one best box per class
-    -> temporal confirmation and cooldown
+    -> video confirmation and cooldown / manual image confirmation
     -> gateway severity rule
     -> transactional database ingest
     -> live cockpit update
@@ -40,7 +40,7 @@ Open **Algorithms** in the cockpit and point to the first two cards.
 > CYPHER uses YOLOv8s, a single-stage detector. Each 640-pixel frame produces
 > boxes, classes and confidences in one forward pass. Ultralytics applies
 > class-aware non-maximum suppression. We then keep one box per class and
-> require temporal evidence before an incident is created.
+> require temporal evidence for video incidents. Uploaded images need operator confirmation.
 
 ### 2. Show measured evidence — 35 seconds
 
@@ -62,8 +62,11 @@ table and one precision–recall or confusion-matrix image.
 5. Press **Confirm detection and raise incident**.
 
 Webcam analysis samples five frames and keeps only detections present in at
-least two. Confirmation then checks eight consecutive frames before posting to
-the gateway.
+least two. Webcam confirmation checks eight consecutive fresh frames before
+posting to the gateway. An uploaded image is analyzed once and confirmed by the
+operator; it is not temporal evidence. Use **Start monitoring** for continuous
+webcam detection. The loop stays on after an alert, with a 90-second cooldown
+for that class and camera.
 
 Reliable manual upload examples are bundled under `ai/evidence/demo/`:
 

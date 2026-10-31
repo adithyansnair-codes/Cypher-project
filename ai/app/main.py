@@ -4,13 +4,13 @@ Runs YOLO detection and reports findings to the Spring Boot gateway, which owns
 the database. This service holds no persistent state.
 
 Run:
-    uvicorn ai.app.main:app --host 0.0.0.0 --port 5000
+    uvicorn ai.app.main:app --host 127.0.0.1 --port 5000
 
 Endpoints:
     GET  /health          liveness plus model info
     POST /detect          run detection on an uploaded image, no side effects
     POST /monitor/frame   detect AND raise incidents for what it finds
-    POST /monitor/stream  background worker over a video file or camera index
+    POST /monitor/stream  bounded worker over a video file or camera index
 """
 from __future__ import annotations
 
@@ -30,6 +30,8 @@ from fastapi.responses import JSONResponse
 from .config import settings
 from .detector import Detector
 from .gateway import GatewayClient
+from .policy import DetectionPolicy, REPORTABLE
+from urllib.parse import urlsplit
 
 logging.basicConfig(
     level=logging.INFO,
@@ -67,22 +69,10 @@ app.add_middleware(
 detector: Detector | None = None
 gateway = GatewayClient()
 
-# camera_id -> label -> last time an incident was raised for it
-_last_raised: dict[tuple[int, str], float] = defaultdict(float)
-
-# (camera_id, label) -> how many frames in a row have shown it.
-#
-# WHY: a single frame is not evidence. In a 45-second webcam run the model
-# scored "pistol" on 1282 frames at 35-55% confidence when no pistol was
-# present, and one of those frames was enough to raise a CRITICAL incident.
-# A real object is seen consistently; sensor noise and a familiar shape are
-# not. Requiring the same label across several frames removes most of it.
-_streak: dict[tuple[int, str], int] = defaultdict(int)
-
-# Frames in a row a label must appear before it is reported. At ~27 fps this is
-# roughly a third of a second -- short enough that an operator does not notice,
-# long enough to reject a one-frame false positive.
 CONFIRM_FRAMES = int(os.getenv("CONFIRM_FRAMES", "8"))
+policy = DetectionPolicy(frames=CONFIRM_FRAMES, cooldown=settings.COOLDOWN_SECONDS)
+_streak = policy.streak
+_last_raised = policy.raised
 
 # The live trace in the cockpit is throttled to this many seconds per camera:
 # reasoning is worth watching, but not 27 times a second. Decisions
@@ -98,13 +88,7 @@ def reset_demo(camera_id: int | None = None) -> dict[str, Any]:
     This is deliberately an explicit demo control. It does not touch the
     database; it only forgets transient frame counters in this AI process.
     """
-    for state in (_streak, _last_raised):
-        keys = [
-            key for key in list(state)
-            if camera_id is None or key[0] == camera_id
-        ]
-        for key in keys:
-            state.pop(key, None)
+    policy.reset(camera_id)
     return {"status": "reset", "cameraId": camera_id}
 
 
@@ -192,16 +176,9 @@ async def monitor_frame(
     # One incident per object class per frame. A single image often contains
     # several boxes for the same object (overlapping detections); reporting each
     # would raise five identical incidents for one photograph.
-    best: dict[str, dict[str, Any]] = {}
-    for det in found:
-        label = str(det["label"]).lower()
-        if label not in best or det["confidence"] > best[label]["confidence"]:
-            best[label] = det
-
-    duplicates = len(found) - len(best)
-    if duplicates > 0:
-        log.info("collapsed %d duplicate detection(s) into %d object class(es)",
-                 duplicates, len(best))
+    cid = camera_id if camera_id is not None else gateway.default_camera_id()
+    best = policy.observe(cid, found)
+    duplicates = len(found) - len({str(det["label"]).lower() for det in found})
 
     header = [
         f"frame received: {frame.shape[1]}x{frame.shape[0]} px",
@@ -220,8 +197,6 @@ async def monitor_frame(
         )
 
     for label, det in best.items():
-        cid = camera_id or gateway.default_camera_id()
-        _streak[(cid, label)] += 1
 
         if _streak[(cid, label)] < CONFIRM_FRAMES:
             skipped.append(f"{label} (needs {CONFIRM_FRAMES} frames, has {_streak[(cid, label)]})")
@@ -266,7 +241,7 @@ async def monitor_frame(
                 inference_ms=round(inference_ms, 1),
                 bounding_box=det["box"],
             )
-            _last_raised[(cid, label)] = time.time()
+            policy.mark_reported(cid, label)
             raised.append(incident)
         except Exception as exc:  # noqa: BLE001 - report, do not crash the loop
             log.error("failed to report %s: %s", label, exc)
@@ -291,13 +266,14 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
     default webcam).
     """
     src: Any = int(source) if str(source).isdigit() else source
-    if isinstance(src, str) and not Path(src).exists():
+    if isinstance(src, str) and urlsplit(src).scheme not in {"rtsp", "http", "https"} and not Path(src).exists():
         raise HTTPException(status_code=404, detail=f"no such video: {src}")
 
     cap = cv2.VideoCapture(src)
     if not cap.isOpened():
         raise HTTPException(status_code=400, detail=f"cannot open video source {source}")
 
+    max_seconds = max(1, min(max_seconds, 300))
     started = time.time()
     frames = 0
     raised = 0
@@ -315,21 +291,10 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
             frame_started = time.perf_counter()
             detections = detector.detect(frame)
             inference_ms = (time.perf_counter() - frame_started) * 1000
-            labels_this_frame = {str(d["label"]).lower() for d in detections}
-            best_this_frame: dict[str, dict[str, Any]] = {}
-            for d in detections:
-                label = str(d["label"]).lower()
+            best_this_frame = policy.observe(cid, detections)
+            labels_this_frame = set(best_this_frame)
+            for label in {str(d["label"]).lower() for d in detections}:
                 seen[label] += 1
-                if (label not in best_this_frame
-                        or float(d["confidence"]) > float(best_this_frame[label]["confidence"])):
-                    best_this_frame[label] = d
-
-            # advance the streak for labels present, reset it for those absent
-            for label in list(_streak):
-                if label[0] == cid and label[1] not in labels_this_frame:
-                    _streak[label] = 0
-            for label in labels_this_frame:
-                _streak[(cid, label)] += 1
 
             observed = ", ".join(
                 f"{name} {det['confidence']:.0f}%"
@@ -354,8 +319,6 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                     continue
                 if _streak[(cid, label)] < CONFIRM_FRAMES:
                     continue  # seen too briefly to trust
-                if label in reported:
-                    continue
                 try:
                     gateway.report_incident(
                         title=f"{label.capitalize()} detected",
@@ -373,7 +336,7 @@ def monitor_stream(source: str, max_seconds: int = 30, camera_id: int | None = N
                         inference_ms=round(inference_ms, 1),
                         bounding_box=det["box"],
                     )
-                    _last_raised[(cid, label)] = time.time()
+                    policy.mark_reported(cid, label)
                     reported.add(label)
                     raised += 1
                 except Exception as exc:  # noqa: BLE001
@@ -404,11 +367,8 @@ async def _read_upload(file: UploadFile) -> np.ndarray:
 
 
 def _on_cooldown(camera_id: int, label: str) -> bool:
-    last = _last_raised.get((camera_id, label), 0.0)
-    return (time.time() - last) < settings.COOLDOWN_SECONDS
+    return policy.on_cooldown(camera_id, label)
 
 
 def _is_reportable(label: str) -> bool:
-    # "lying" is the class the six-class model produces for a fallen person;
-    # the platform's health rule treats it like "fall".
-    return label in settings.CRITICAL_CLASSES or label in {"smoke", "fall", "person", "lying"}
+    return label in REPORTABLE

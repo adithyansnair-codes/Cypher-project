@@ -11,7 +11,8 @@ import com.cypher.backend.repository.IncidentRepository;
 import com.cypher.backend.websocket.IncidentSocketHandler;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -30,9 +31,7 @@ import java.util.stream.Collectors;
 /**
  * Incident read model and the operator acknowledge/resolve workflow.
  *
- * <p>Incidents are not created here. In production the AI engine posts them to
- * the gateway, which calls the {@code create_incident_with_alert} stored
- * procedure so the alert row is created in the same transaction.
+ * The detection, incident and alert are saved in one transaction.
  */
 @Service
 public class IncidentService {
@@ -61,6 +60,8 @@ public class IncidentService {
     private final AlertRepository alertRepository;
     private final IncidentSocketHandler socketHandler;
     private final IncidentMetrics metrics;
+    private final JdbcTemplate jdbc;
+    private final DatabaseDialect dialect;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -69,12 +70,14 @@ public class IncidentService {
                            CameraRepository cameraRepository,
                            AlertRepository alertRepository,
                            IncidentSocketHandler socketHandler,
-                           IncidentMetrics metrics) {
+                           IncidentMetrics metrics, JdbcTemplate jdbc, DatabaseDialect dialect) {
         this.incidentRepository = incidentRepository;
         this.cameraRepository = cameraRepository;
         this.alertRepository = alertRepository;
         this.socketHandler = socketHandler;
         this.metrics = metrics;
+        this.jdbc = jdbc;
+        this.dialect = dialect;
     }
 
     @Transactional(readOnly = true)
@@ -129,8 +132,8 @@ public class IncidentService {
         Incident incident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new IllegalArgumentException("No incident with id " + incidentId));
 
-        if (STATUS_RESOLVED.equals(incident.getStatus())) {
-            throw new IllegalStateException("Incident " + incidentId + " is already resolved");
+        if (!List.of(STATUS_OPEN, STATUS_ACKNOWLEDGED).contains(incident.getStatus())) {
+            throw new IllegalStateException("Incident " + incidentId + " cannot be resolved from " + incident.getStatus());
         }
 
         incident.setStatus(STATUS_RESOLVED);
@@ -191,9 +194,7 @@ public class IncidentService {
     /**
      * Records an incident reported by the detection pipeline.
      *
-     * <p>Delegates to the {@code create_incident_with_alert} stored procedure so
-     * the incident and its alert are written in one transaction, then fires the
-     * same priority rules the database function uses.
+     * Saves the incident and alert together, using the inserted incident ID.
      *
      * @param request  the detection payload
      * @param reportedBy user id to assign, or null for unassigned
@@ -204,7 +205,8 @@ public class IncidentService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No camera with id " + request.getCameraId()));
 
-        SeverityDecision decision = (request.getSeverity() == null || request.getSeverity().isBlank())
+        SeverityDecision decision = (request.getDetectedObject() != null && !request.getDetectedObject().isBlank())
+                || request.getSeverity() == null || request.getSeverity().isBlank()
                 ? deriveSeverity(request.getDetectedObject(), request.getConfidence())
                 : new SeverityDecision(request.getSeverity().trim().toUpperCase(),
                         "severity supplied by the caller");
@@ -220,25 +222,21 @@ public class IncidentService {
         // leaving an incident with no underlying detection for Analytics.
         Long detectionId = recordDetection(request, camera);
 
-        entityManager.createNativeQuery(
-                "CALL create_incident_with_alert(:projectId, :cameraId, :title, :description, :severity, :assignedTo, :detectionId)")
-                .setParameter("projectId", camera.getProjectId())
-                .setParameter("cameraId", camera.getCameraId())
-                .setParameter("title", request.getTitle())
-                .setParameter("description", request.getDescription())
-                .setParameter("severity", severity)
-                .setParameter("assignedTo", reportedBy)
-                .setParameter("detectionId", detectionId)
-                .executeUpdate();
-
-        // The procedure does not return the new id, so read back the newest
-        // incident for this camera -- created in the same transaction.
-        Incident saved = incidentRepository
-                .findByCameraIdOrderByOccurredAtDesc(camera.getCameraId())
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                        "Incident was created but could not be read back"));
+        Incident saved = new Incident();
+        saved.setProjectId(camera.getProjectId());
+        saved.setCameraId(camera.getCameraId());
+        saved.setDetectionId(detectionId);
+        saved.setTitle(request.getTitle());
+        saved.setDescription(request.getDescription());
+        saved.setSeverity(severity);
+        saved.setStatus(STATUS_OPEN);
+        saved.setAssignedTo(reportedBy);
+        saved.setOccurredAt(Instant.now());
+        saved = incidentRepository.saveAndFlush(saved);
+        jdbc.update("""
+                INSERT INTO alerts (incident_id, alert_type, alert_message, alert_status)
+                VALUES (?, 'INCIDENT', ?, 'PENDING')
+                """, saved.getIncidentId(), "New Incident: " + request.getTitle());
 
         IncidentResponse response = enrich(List.of(saved)).get(0);
         metrics.created(response.severity(), request.getDetectedObject());
@@ -277,37 +275,34 @@ public class IncidentService {
                         "SELECT model_id FROM ai_models WHERE model_name = 'CYPHER-YOLOv8s' AND version = '3.0'")
                 .getSingleResult();
 
-        Number jobId = (Number) entityManager.createNativeQuery("""
-                        INSERT INTO inference_jobs (
-                            camera_id, model_id, started_at, completed_at, status, frames_processed
-                        ) VALUES (
-                            :cameraId, :modelId, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'COMPLETED', 1
-                        )
-                        RETURNING job_id
-                        """)
-                .setParameter("cameraId", camera.getCameraId())
-                .setParameter("modelId", modelId.longValue())
-                .getSingleResult();
+        long jobId = insertWithId("""
+                INSERT INTO inference_jobs
+                    (camera_id, model_id, started_at, completed_at, status, frames_processed)
+                VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'COMPLETED', 1)
+                """, "job_id", camera.getCameraId(), modelId.longValue());
 
         String object = request.getDetectedObject() == null
                 ? "unknown" : request.getDetectedObject().trim().toLowerCase();
         double confidence = request.getConfidence() == null ? 0d : request.getConfidence();
         String box = request.getBoundingBox() == null ? null : request.getBoundingBox().toString();
+        return insertWithId("""
+                INSERT INTO detections
+                    (camera_id, job_id, detected_object, confidence, bounding_box, detected_at)
+                VALUES (?, ?, ?, ?, CAST(? AS %s), CURRENT_TIMESTAMP)
+                """.formatted(dialect.jsonType()), "detection_id",
+                camera.getCameraId(), jobId, object, confidence, box);
+    }
 
-        Query detection = entityManager.createNativeQuery("""
-                INSERT INTO detections (
-                    camera_id, job_id, detected_object, confidence, bounding_box, detected_at
-                ) VALUES (
-                    :cameraId, :jobId, :object, :confidence, CAST(:box AS jsonb), CURRENT_TIMESTAMP
-                )
-                RETURNING detection_id
-                """)
-                .setParameter("cameraId", camera.getCameraId())
-                .setParameter("jobId", jobId.longValue())
-                .setParameter("object", object)
-                .setParameter("confidence", confidence)
-                .setParameter("box", box);
-        return ((Number) detection.getSingleResult()).longValue();
+    private long insertWithId(String sql, String idColumn, Object... values) {
+        GeneratedKeyHolder key = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(sql, new String[]{idColumn});
+            for (int i = 0; i < values.length; i++) {
+                statement.setObject(i + 1, values[i]);
+            }
+            return statement;
+        }, key);
+        return java.util.Objects.requireNonNull(key.getKey(), "Missing generated ID").longValue();
     }
 
     /**
@@ -323,11 +318,7 @@ public class IncidentService {
         String object = detectedObject == null ? "" : detectedObject.trim().toLowerCase();
         double c = confidence == null ? 0d : confidence;
 
-        // Lethal or life-threatening objects are CRITICAL whatever the confidence.
-        // "pistol" and "rifle" were missing here, so a pistol detected at 38%
-        // confidence was graded LOW -- the opposite of the intended behaviour.
-        // The trained detector's classes are exactly knife and pistol, so this
-        // omission would have mis-graded most real detections.
+        // Weapons and fire need review even at a lower confidence score.
         if (CRITICAL_OBJECTS.contains(object)) {
             return new SeverityDecision(SEVERITY_CRITICAL,
                     "'" + object + "' is a high-risk class -> CRITICAL regardless of confidence");

@@ -1,455 +1,114 @@
 # CYPHER
 
-> **AI-Powered Smart Monitoring & User Management Platform**
+CYPHER is our incident reporting and surveillance project for Cloud Architecture,
+Software Engineering, Machine Learning and Embedded Systems at VIT Chennai.
+It combines a camera/image detector with a dashboard where an operator can review,
+acknowledge and resolve incidents.
 
-![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.x-6DB33F?style=for-the-badge&logo=springboot)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql)
-![JWT](https://img.shields.io/badge/JWT-Authentication-black?style=for-the-badge)
-![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?style=for-the-badge&logo=amazonaws)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
+## What is implemented
 
----
+- Login, registration and role-based API access.
+- Incident dashboard, camera/project management, analytics and audit history.
+- Live updates through WebSockets.
+- Image upload and webcam detection using our six-class YOLOv8s model:
+  `knife`, `pistol`, `person`, `fire`, `smoke` and `lying`.
+- Continuous webcam monitoring with eight-frame confirmation and a 90-second
+  cooldown per camera and object class. Uploaded images use manual confirmation.
+- CSV, Excel and PDF exports through a separate C# reporting service.
+- PostgreSQL support locally and MySQL support for the AWS RDS setup.
+- Optional incident evidence uploads to private S3 storage.
 
-> **AI-Powered Smart Monitoring & User Management Platform**
+A detection is a reason for an operator to review the scene. The model detects
+objects; it does not establish who is holding a weapon or whether someone intends
+harm. `lying` is a pose class, not proof of a fall. A person detection alone does
+not create an incident. See the [model results and limitations](ai/evidence/README.md).
 
----
+## Stack
 
-## 📌 Project Overview
+| Part | Technology |
+|---|---|
+| Dashboard | HTML, CSS and JavaScript, served by Spring Boot |
+| Backend | Java 21, Spring Boot 4, Spring Security, JPA, Flyway |
+| Database | PostgreSQL 16 locally; MySQL 8.4 on RDS |
+| ML service | Python, Ultralytics YOLOv8s, OpenCV, FastAPI |
+| Reporting | .NET 10, Npgsql/MySqlConnector, ClosedXML, QuestPDF |
+| Cloud | EC2, RDS, S3, IAM and scheduled backups |
 
-CYPHER is an AI-powered platform designed to provide secure user authentication, intelligent monitoring, and centralized management through a modern web application.
+## Run locally
 
-The platform combines secure backend services, cloud deployment, and a scalable architecture to create a strong foundation for future AI-powered features such as anomaly detection, user behavior analytics, and intelligent security recommendations.
+Install Java 21, Python 3.11+, .NET 10 and PostgreSQL. The Maven wrapper is included.
+There is no React app or npm development server to install.
 
----
+1. Create an empty PostgreSQL database and a database user, or use your existing
+   CYPHER database. Do not run the database reset script against data you need.
+2. Copy `.env.example` to `.env`. Set the database values and generate a signing
+   key with `openssl rand -base64 64`. Put it in `JWT_SECRET`.
+3. Create the Python environment and install the ML dependencies:
 
-## ❓ Problem Statement
+   ```bash
+   python3 -m venv .venv
+   .venv/bin/pip install -r ai/requirements.txt
+   ```
 
-Organizations often rely on fragmented systems for authentication and monitoring, making administration difficult and increasing security risks.
+4. Set `YOLO_WEIGHTS` in `.env` to the trained `best.pt` file. Weights and datasets
+   are kept outside Git. Set `PERSON_WEIGHTS` if using the optional COCO person model.
+5. Start the services:
 
-CYPHER provides a centralized, secure, and scalable platform that simplifies user management while preparing the system for future AI-driven analytics.
+   ```bash
+   ./scripts/run-local.sh
+   ```
 
----
+Open **http://localhost:8081**. The launcher starts the backend, ML service and
+reporting service, and stops them when you press Ctrl+C. PostgreSQL must already
+be running. You can also start one service with `./scripts/run-local.sh backend`,
+`ai` or `reporting`.
 
-## 🎯 Vision Statement
+PostgreSQL's demo migration includes `admin@cypher.com` / `Admin@2026`.
+These are demo credentials and must be changed before exposing the app publicly.
+The MySQL migrations add roles and the schema, but do not add demo accounts.
 
-To build an intelligent, secure, and scalable platform that combines modern authentication, cloud-native architecture, and AI capabilities to improve security, usability, and system management.
+Docker users can run the backend, database and reporting stack with
+`docker compose up -d --build` after setting `.env`. Run the ML service on the host
+for access to the webcam. Details: [operations](docs/OPERATIONS.md).
 
----
+## Project folders
 
-## 👥 Target Users
+- `backend/src/main/java/` — API, security and incident workflow.
+- `backend/src/main/resources/static/` — the dashboard source.
+- `frontend/src/` — links to the same dashboard files; no separate build.
+- `backend/src/main/resources/db/` — PostgreSQL and MySQL migrations.
+- `ai/` — inference, CLI, training scripts, model results and demo images.
+- `reporting/` — export service.
+- `docs/` — design, API and deployment notes.
+- `hardware/` — embedded work, currently outside the software completion scope.
 
-- Small and Medium Businesses
-- Educational Institutions
-- Startup Companies
-- System Administrators
-- IT Teams
+## Checks
 
----
-
-## 🚀 Features
-
-### ✅ Current Features
-
-- User Registration
-- Secure Login
-- BCrypt Password Encryption
-- JWT Authentication
-- PostgreSQL Database
-- REST APIs
-- Incident dashboard with acknowledge / resolve workflow
-- Live incident push over WebSocket (MoSCoW M-03)
-- Incident exports: CSV / Excel / PDF (C# reporting worker)
-- Role-based access control across the API (MoSCoW S-05)
-- Audit trail of every incident change (MoSCoW S-06)
-- Camera and project administration (MoSCoW S-07)
-- Analytics view: incident trend, severity split, detection totals
-- Live trace: the detection pipeline's reasoning, streamed to the cockpit as it runs
-- Six-class YOLOv8s detection: knife, pistol, person, fire, smoke and lying/fall
-- Terminal CLI, FastAPI engine and ESP32-CAM MJPEG input through one incident contract
-- Reproducible training/evaluation pipeline with a fixed 385-image comparison set
-- Model card, PR/F1 curves and normalised confusion matrices
-- Private S3 evidence storage with short-lived signed download links
-- Prometheus metrics and a provisioned Grafana operations dashboard
-- GitHub Actions CI plus a reproducible Jenkins pipeline
-- Cloud Deployment (AWS EC2)
-- Secure Protected Routes
-
-### 🤖 Future AI Work
-
-- AI-powered Login Anomaly Detection
-- Suspicious Login Alerts
-- User Behaviour Analytics
-- Smart Dashboard Insights
-- Predictive Security Recommendations
-
----
-
-## 🛠 Tech Stack
-
-### Backend
-
-- Spring Boot
-- Spring Security
-- Java 21
-- Maven
-- JWT
-
-### Database
-
-- PostgreSQL
-
-### Frontend
-
-- Browser cockpit served directly by Spring Boot
-- HTML, CSS and JavaScript
-
-### AI and Computer Vision
-
-- Python
-- PyTorch
-- Ultralytics YOLOv8s
-- OpenCV
-- FastAPI
-
-### Cloud
-
-- AWS EC2
-- AWS S3
-- Ubuntu Linux
-
-### Delivery and observability
-
-- GitHub Actions
-- Jenkins
-- Prometheus
-- Grafana
-- Docker Compose
-
-### Tools
-
-- Git
-- GitHub
-- Docker
-- Postman
-- Figma
-- Draw.io
-
----
----
-
-## 🏗️ System Architecture
-
-The CYPHER platform follows a layered architecture with a browser cockpit, a
-Spring Boot gateway, relational persistence, a private reporting worker and an
-AI detection service. Authentication is secured with JWT and Spring Security.
-The local stack uses PostgreSQL 16; the separate AWS DA2 deployment uses Amazon
-RDS for MySQL.
-
-![System Architecture](docs/design/architecture/architecture.png)
-
----
-
-## 📈 Success Metrics
-
-- Secure JWT Authentication
-- BCrypt Password Hashing
-- RESTful API Architecture
-- Cloud Deployment
-- Modular Backend Design
-- AI-ready Architecture
-- Fast Authentication Response
-
----
-
-## 📂 Project Structure
-
-```
-CYPHER/
-│
-├── ai/
-│   ├── app/              # FastAPI detection engine
-│   ├── training/         # dataset conversion and training
-│   └── evidence/         # measured model card, curves and matrices
-│
-├── backend/
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   ├── entity/
-│   ├── dto/
-│   ├── security/
-│   └── config/
-│
-├── frontend/
-│
-├── docs/
-├── monitoring/           # Prometheus and provisioned Grafana dashboard
-├── infra/                # Jenkins image and AWS bootstrap helpers
-├── .github/workflows/    # GitHub Actions CI
-├── Jenkinsfile
-│
-└── README.md
-```
-## 🔀 Branching Strategy (GitHub Flow)
-
-CYPHER follows the **GitHub Flow** branching strategy.
-
-### Workflow
-
-1. The `main` branch always contains stable and production-ready code.
-2. A new **feature branch** is created for every new feature or enhancement.
-3. Development is carried out on the feature branch.
-4. Changes are committed regularly with meaningful commit messages.
-5. The feature branch is pushed to GitHub.
-6. A Pull Request (PR) is created to review the changes.
-7. After review, the Pull Request is merged into the `main` branch.
-
-### Branch Structure
-
-- `main` → Stable production-ready branch
-- `feature/docker-support` → Docker integration
-- Future feature branches:
-  - `feature/frontend-ui`
-  - `feature/ai-module`
-  - `feature/user-management`
-
-This workflow helps maintain code quality, supports collaboration, and keeps the `main` branch stable.
-
-## ⚙️ Getting Started
-
-### Clone Repository
-
-```bash
-git clone git@github.com:adithyansnair-codes/Cypher-project.git
-```
-
-### Backend
+Use a separate test database. The backend tests apply migrations and create test data.
 
 ```bash
 cd backend
-./mvnw spring-boot:run
+DB_HOST=localhost DB_PORT=5432 DB_NAME=cypher_test DB_USER=cypher_test DB_PASSWORD=... ./mvnw verify
 ```
 
-Backend runs on
-
-```
-http://localhost:8081
-```
-
----
----
-
-# 🚀 Quick Start – Local Development
-
-Follow these steps to run the CYPHER project locally.
-
-## Prerequisites
-
-Make sure the following software is installed:
-
-- Java 21
-- Maven
-- PostgreSQL
-- Git
-- Node.js (for the frontend)
-- Docker (optional)
-
----
-
-## Clone the Repository
+For MySQL, also set `SPRING_PROFILES_ACTIVE=mysql` and the MySQL connection values.
+Use `DB_SSL_MODE=DISABLED` only with a local test server.
 
 ```bash
-git clone git@github.com:adithyansnair-codes/Cypher-project.git
-cd Cypher-project
+python3 -m unittest discover -s ai/tests -v
+node --test scripts/test_detection.mjs
+node scripts/check_frontend_js.mjs
+dotnet build reporting
 ```
 
----
+GitHub Actions checks PostgreSQL 16, MySQL 8.4, reporting, detection behaviour and
+builds. [Software status](docs/SOFTWARE-STATUS.md) separates tested code from work
+still needed on the live AWS deployment.
 
-## Backend Setup
-
-Navigate to the backend folder:
-
-```bash
-cd backend
-```
-
-Run the application:
-
-```bash
-./mvnw spring-boot:run
-```
-
-The backend will start on:
-
-```
-http://localhost:8081
-```
-
-For the complete local stack (PostgreSQL 16, gateway, reporting worker,
-Prometheus and Grafana):
-
-```bash
-cp .env.example .env
-# Set DB_PASSWORD and JWT_SECRET in .env first.
-docker compose up -d --build
-```
-
-Open the gateway at `http://localhost:8081`, Prometheus at
-`http://localhost:9090`, and the provisioned CYPHER dashboard at
-`http://localhost:3000`.
-
-For an internet-independent S3 demo, add LocalStack and the media overlay:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.media.yml \
-  --profile media up -d --build
-```
-
-For Jenkins at `http://localhost:8088`:
-
-```bash
-docker compose --profile ci up -d --build jenkins
-```
-
-See [docs/OPERATIONS.md](docs/OPERATIONS.md) for deployment, CI/CD, monitoring,
-evidence-storage and AWS verification.
-
----
-
-## Database Setup
-
-Create a PostgreSQL database named:
-
-```
-cypher
-```
-
-Update your `application.properties` if needed:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/cypher
-spring.datasource.username=postgres
-spring.datasource.password=your_password
-```
-
----
-
-## Frontend Setup
-
-Navigate to the frontend folder:
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-The frontend will run on:
-
-```
-http://localhost:3000
-```
-
----
-
-## API Testing
-
-Use Postman or cURL to test the APIs.
-
-Example:
-
-```bash
-curl -X POST http://localhost:8081/auth/login \
--H "Content-Type: application/json" \
--d '{"email":"virat@example.com","password":"virat123"}'
-```
-
----
-
-## Project Structure
-
-```
-CYPHER
-├── backend
-├── frontend
-├── docs
-├── database
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
-
----
----
-
-# 🛠️ Local Development Tools
-
-The following tools were used during the development of CYPHER:
-
-| Tool | Purpose |
-|------|---------|
-| Java 21 | Backend development |
-| Spring Boot | REST API framework |
-| Maven | Dependency management and build tool |
-| PostgreSQL | Relational database |
-| Git | Version control |
-| GitHub | Source code hosting and collaboration |
-| VS Code / code-server | Source code editor |
-| Postman | API testing |
-| Docker | Containerization |
-| AWS EC2 (Ubuntu) | Cloud deployment |
-| Figma | UI/UX design |
-| Draw.io | System architecture diagrams |
-
----
-
-## Development Environment
-
-- **Operating System:** Ubuntu 24.04 LTS (AWS EC2)
-- **Java Version:** Java 21
-- **Database:** PostgreSQL
-- **Build Tool:** Maven
-- **Version Control:** Git & GitHub
-- **IDE:** Visual Studio Code (code-server)
-- **API Testing:** Postman
-
----
-
----
-
-## Software Design
-
-CYPHER follows a modular service-oriented architecture with layered components. The React frontend communicates with the Spring Boot Gateway through REST APIs and WebSocket connections, while the FastAPI AI Engine submits detected incidents through defined API interfaces. This separation, together with JWT-based authentication and repository-based persistence, promotes modularity, high cohesion, low coupling, and maintainability.
-
-### High-Level Architecture
-
-![CYPHER Architecture](docs/design/architecture/cypher-architecture.png)
-
-**Editable Draw.io Source:**  
-[Open Architecture Source](docs/design/architecture/cypher-architecture.drawio)
-
-### User Interface Design
-
-The CYPHER interface was designed as a clean security operations cockpit with consistent navigation, status indicators, incident prioritization, and monitoring controls.
-
-- [Login](docs/design/figma/01-login.png)
-- [Live Cockpit](docs/design/figma/02-live-cockpit.png)
-- [Incidents](docs/design/figma/03-incidents.png)
-- [Incident Details](docs/design/figma/04-incident-details.png)
-- [Camera Network](docs/design/figma/05-camera-network.png)
-- [Analytics & Reports](docs/design/figma/06-analytics-reports.png)
-
-## 👨‍💻 Team Members
+## Team
 
 | Name | Responsibility |
-|------|----------------|
-| Harsh Singh | Backend Development & Authentication |
-| Satyanarayanan Sai | Frontend Development & Integration |
-| Adithyan S. Nair | Database Design & Cloud Deployment |
-
----
-
-## 📜 License
-
-This project was developed for academic purposes at **VIT Chennai**.
+|---|---|
+| Harsh Singh | Backend and authentication |
+| Satyanarayanan Sai | Frontend and integration |
+| Adithyan S. Nair | Database and cloud deployment |

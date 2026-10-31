@@ -30,6 +30,8 @@ gateway so one `.env` serves both:
 
 | Variable | Default |
 |---|---|
+| `DB_ENGINE` | `postgres`; set `mysql` for RDS |
+| `DB_SSL_MODE` | `Required` for MySQL; `Disabled` only for local tests |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | `localhost` / `5432` / `cypher` |
 | `DB_USER` / `DB_PASSWORD` | `cypher_user` / `proj577!` |
 | `REPORTING_BIND` | `127.0.0.1` (`0.0.0.0` in Compose) |
@@ -39,7 +41,7 @@ gateway so one `.env` serves both:
 
 | Package | Why |
 |---|---|
-| Npgsql | read `incidents` joined with `cameras` and `users` |
+| Npgsql / MySqlConnector | read the selected PostgreSQL or MySQL database |
 | ClosedXML | .xlsx without Excel installed |
 | QuestPDF | PDF layout (community licence, set in `Program.cs`) |
 
@@ -52,3 +54,6 @@ stored in private S3 (`POST /api/incidents/{id}/media`).
 
 Email / SMS dispatch remains deliberately deferred (MoSCoW `C-06`) and is not
 claimed as part of the implemented system.
+
+The launcher loads `.env`; `dotnet run` alone uses exported environment variables.
+`/health` returns HTTP 503 if the database cannot be reached.

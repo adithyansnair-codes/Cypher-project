@@ -35,12 +35,10 @@ from ultralytics import YOLO
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-SCRATCH = ROOT.parent
-
 from ai.app.config import settings          # noqa: E402
 from ai.app.gateway import GatewayClient    # noqa: E402
 
-DEFAULT_WEIGHTS = SCRATCH / "training/runs/cypher-v3-6class/weights/best.pt"
+DEFAULT_WEIGHTS = settings.WEIGHTS
 
 CRITICAL_OBJECTS = {"weapon", "gun", "pistol", "rifle", "knife", "fire"}
 
@@ -60,7 +58,7 @@ def explain(label: str, confidence: float) -> str:
 
 
 def reportable(label: str) -> bool:
-    return label in CRITICAL_OBJECTS or label in {"smoke", "fall", "person", "lying"}
+    return label in CRITICAL_OBJECTS or label in {"smoke", "fall", "lying"}
 
 
 def open_source(source: str) -> cv2.VideoCapture | None:

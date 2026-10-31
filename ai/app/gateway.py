@@ -154,6 +154,6 @@ class GatewayClient:
     # ----------------------------------------------------------------- health
     def healthy(self) -> bool:
         try:
-            return requests.get(f"{settings.GATEWAY_URL}/health", timeout=5).ok
+            return requests.get(f"{settings.GATEWAY_URL}/actuator/health", timeout=5).ok
         except requests.RequestException:
             return False

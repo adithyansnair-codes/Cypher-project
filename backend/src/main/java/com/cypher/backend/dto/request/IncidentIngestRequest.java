@@ -12,7 +12,7 @@ import java.util.List;
  * pipeline and the gateway. The Python service will POST this shape; nothing
  * about the gateway changes when the detector does.
  *
- * <p>{@code severity} is optional. When omitted it is derived from the detected
+ * <p>{@code severity} is optional. For a detection it is derived from the detected
  * object and confidence, so a new detector cannot invent its own priority
  * vocabulary.
  */
@@ -27,13 +27,15 @@ public class IncidentIngestRequest {
 
     private String description;
 
-    /** Optional. One of LOW, MEDIUM, HIGH, CRITICAL. */
+    /** Manual reports only. Detections use the gateway severity rule. */
     private String severity;
 
     /** Optional, e.g. "person", "smoke", "weapon". Used to derive severity. */
     private String detectedObject;
 
     /** Optional 0-100 confidence from the model. */
+    @jakarta.validation.constraints.DecimalMin("0.0")
+    @jakarta.validation.constraints.DecimalMax("100.0")
     private Double confidence;
 
     // ---------------------------------------------------------------------
@@ -54,7 +56,8 @@ public class IncidentIngestRequest {
     private Double inferenceMs;
 
     /** Optional pixel box [x1, y1, x2, y2] for the detection that raised this incident. */
-    private List<Double> boundingBox;
+    @Size(min = 4, max = 4)
+    private List<@jakarta.validation.constraints.NotNull Double> boundingBox;
 
     /** Where the frame came from: a camera index, file or stream URL. */
     private String source;

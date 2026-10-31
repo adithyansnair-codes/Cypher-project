@@ -6,9 +6,13 @@ set -euo pipefail
 #   ./ai/demo-ml.sh live     raises a real incident in the local cockpit
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SCRATCH="$(cd "$ROOT/.." && pwd)"
-PYTHON="${CYPHER_PYTHON:-$SCRATCH/ml/bin/python}"
-WEIGHTS="${CYPHER_WEIGHTS:-$SCRATCH/training/runs/cypher-v3-6class/weights/best.pt}"
+if [[ -f "$ROOT/.env" ]]; then
+    set -a
+    source "$ROOT/.env"
+    set +a
+fi
+PYTHON="${CYPHER_PYTHON:-${AI_PYTHON:-$ROOT/.venv/bin/python}}"
+WEIGHTS="${CYPHER_WEIGHTS:-${YOLO_WEIGHTS:-$ROOT/data/training/runs/cypher-v3-6class/weights/best.pt}}"
 IMAGE="${CYPHER_DEMO_IMAGE:-$ROOT/ai/evidence/demo/knife.jpg}"
 MODE="${1:-preview}"
 COCKPIT_URL="${CYPHER_COCKPIT_URL:-http://localhost:8081}"
@@ -29,7 +33,7 @@ fi
 
 printf '\n%s\n' 'ALGORITHM'
 printf '%s\n' 'YOLOv8s @ 640 px -> class-aware NMS -> one best box per class'
-printf '%s\n' '-> 8-frame confirmation -> 90 s cooldown -> gateway severity rule'
+printf '%s\n' '-> single-image inference -> gateway severity rule (video uses 8-frame confirmation)'
 printf '%s\n' '-> transactional database ingest -> post-commit WebSocket update'
 
 CLI_ARGS=(

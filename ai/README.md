@@ -43,7 +43,7 @@ and **mAP@50–95 0.5149**. Full model card, per-class tables, PR/F1 curves,
 confusion matrices, limitations and the team’s engineering contribution are in
 [`evidence/README.md`](evidence/README.md).
 
-**Honest limitations.** The weapon comparison set and merged validation set
+**Limitations.** The weapon comparison set and merged validation set
 measure different things. `lying` has only 15 validation boxes, and upstream
 `GUN` annotation boundaries depress pistol recall on the merged split. The model
 has not yet been validated on a large, site-specific feed from the actual
@@ -65,19 +65,19 @@ ESP32-CAM's MJPEG stream, prints every decision, and posts incidents to the
 gateway so they appear in the cockpit.
 
 ```bash
-cd ~/CYPHER/.dsh-scratch/work
+cd Cypher-project
 
 # safe test: detect, never post
-~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py --source photo.jpg --dry-run
+.venv/bin/python ai/cli.py --source photo.jpg --dry-run
 
 # photo -> real incident in the cockpit
-~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py --source photo.jpg --camera-id 1
+.venv/bin/python ai/cli.py --source photo.jpg --camera-id 1
 
 # live Mac webcam
-~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py --source 0 --seconds 30
+.venv/bin/python ai/cli.py --source 0 --seconds 30
 
 # ESP32-CAM (Mac connected to CYPHER-CAM)
-~/CYPHER/.dsh-scratch/ml/bin/python ai/cli.py \
+.venv/bin/python ai/cli.py \
   --source http://192.168.4.1:81/stream --seconds 60
 ```
 
@@ -92,8 +92,9 @@ directly, so the FastAPI service is not needed for terminal use.
 
 ```bash
 python -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
-uvicorn ai.app.main:app --host 0.0.0.0 --port 5000
+pip install -r ai/requirements.txt
+export YOLO_WEIGHTS=/absolute/path/to/best.pt
+uvicorn ai.app.main:app --host 127.0.0.1 --port 5000
 ```
 
 Configuration is entirely environment-driven — `GATEWAY_URL`, `YOLO_WEIGHTS`,
@@ -133,3 +134,21 @@ are scored on the same images.
 - Evaluate the detector through the ESP32-CAM under real lighting and motion.
 - Add a tracked-byte-stream option and a durable event queue before treating
   browser delivery as a production message bus.
+
+## Confirmation rules
+
+Live detections need eight consecutive frames of the same reportable class.
+A missing frame or a gap longer than five seconds resets the streak. Duplicate
+boxes in one frame count once. A successfully reported class has a 90-second
+cooldown on that camera. Monitoring continues after an incident.
+
+The browser's image workflow analyzes one image and asks the operator to confirm
+it. Repeating inference on the same image would not be temporal evidence, so it
+is not described as eight-frame confirmation. A person by itself is shown in the
+preview but does not raise an incident. `lying` does not establish that a fall
+happened. Browser and Python monitoring each keep cooldowns in memory; use one
+monitoring path per camera to avoid duplicates across separate processes.
+
+Set `YOLO_WEIGHTS` explicitly or place the model under
+`data/training/runs/cypher-v3-6class/weights/best.pt`. `CYPHER_DATA_DIR` can change
+the `data` root. Startup fails if the trained weights are missing.

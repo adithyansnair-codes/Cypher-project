@@ -10,7 +10,7 @@ health or build check for it.
 |---|---|---|---|
 | Local host | PostgreSQL 16.15 | Spring Boot 4 / Java 21 | .NET 10 |
 | Docker Compose | PostgreSQL 16 | Spring Boot 4 / Java 21 | .NET 10 |
-| AWS DA2 deployment | RDS MySQL 8.4.9 | Spring Boot / Java 21 | PostgreSQL-only worker |
+| AWS DA2 deployment | RDS MySQL 8.4.9 | Spring Boot / Java 21 | MySQL support added; deployment still to verify |
 
 The repository's canonical local schema is PostgreSQL 16. The separate DA2
 staging build in AWS uses MySQL and must not be described as the same database
@@ -176,3 +176,24 @@ Backend integration tests verify these boundaries against PostgreSQL:
 The role matrix source of truth is
 `backend/src/main/java/com/cypher/backend/config/SecurityConfig.java`, matching
 the `role_permissions` seed migrations.
+
+## MySQL migrations
+
+Set `SPRING_PROFILES_ACTIVE=mysql` for the backend and `DB_ENGINE=mysql` for the
+reporting service. Both use `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and
+`DB_PASSWORD`. MySQL connections require TLS by default.
+
+The MySQL Flyway scripts are in `backend/src/main/resources/db/mysql`. A fresh,
+empty database receives the schema, current model record, incident triggers and
+role definitions. No demo accounts are created. Register an account, then have
+the database administrator assign its role before using it to manage cameras.
+
+The existing DA2 schema can be baselined at version 1. Before deploying, take a
+backup, compare the existing schema with V1 and check `SHOW TRIGGERS`. V2 adds
+`trg_close_alerts` and `trg_incident_changes`; do not apply it over manually added
+triggers without checking them. RDS may require `log_bin_trust_function_creators`
+or a migration account allowed to create triggers. Confirm this on the RDS
+instance before changing its configuration.
+
+See [software status](SOFTWARE-STATUS.md) for the checks completed locally and
+what is still unverified in AWS.

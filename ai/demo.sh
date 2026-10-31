@@ -7,9 +7,13 @@ set -euo pipefail
 #   ./ai/demo.sh preview   bundled knife photo -> no database write
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SCRATCH="$(cd "$ROOT/.." && pwd)"
-PYTHON="${CYPHER_PYTHON:-$SCRATCH/ml/bin/python}"
-WEIGHTS="${CYPHER_WEIGHTS:-$SCRATCH/training/runs/cypher-v3-6class/weights/best.pt}"
+if [[ -f "$ROOT/.env" ]]; then
+    set -a
+    source "$ROOT/.env"
+    set +a
+fi
+PYTHON="${CYPHER_PYTHON:-${AI_PYTHON:-$ROOT/.venv/bin/python}}"
+WEIGHTS="${CYPHER_WEIGHTS:-${YOLO_WEIGHTS:-$ROOT/data/training/runs/cypher-v3-6class/weights/best.pt}}"
 GATEWAY="${GATEWAY_URL:-http://localhost:8081}"
 MODE="${1:-camera}"
 

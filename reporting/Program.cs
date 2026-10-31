@@ -26,12 +26,16 @@ app.MapGet("/", () => Results.Json(new
     }
 }));
 
-app.MapGet("/health", () => Results.Json(new
+app.MapGet("/health", () =>
 {
-    status = "UP",
-    service = "cypher-reporter",
-    database = Database.Reachable(connectionString) ? "UP" : "DOWN"
-}));
+    bool reachable = Database.Reachable(connectionString);
+    return Results.Json(new
+    {
+        status = reachable ? "UP" : "DOWN",
+        service = "cypher-reporter",
+        database = reachable ? "UP" : "DOWN"
+    }, statusCode: reachable ? 200 : 503);
+});
 
 app.MapGet("/reports/incidents.{format}", (string format, string? status, string? severity, int? limit) =>
 {
@@ -55,10 +59,10 @@ app.MapGet("/reports/incidents.{format}", (string format, string? status, string
         var fileName = $"cypher-incidents-{DateTimeOffset.UtcNow:yyyyMMdd-HHmm}.{normalized}";
         return Results.File(bytes, contentType, fileName);
     }
-    catch (Npgsql.NpgsqlException e)
+    catch (System.Data.Common.DbException)
     {
         return Results.Json(
-            new { error = "database unavailable", detail = e.Message },
+            new { error = "database unavailable" },
             statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 });

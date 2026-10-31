@@ -48,6 +48,24 @@ jobs:
           DB_PASSWORD: cypher_ci_password
           JWT_SECRET: Y2ktb25seS1jeXBoZXItand0LXNlY3JldC10aGF0LWlzLWxvbmcgZW5vdWdoLWZvci1oczI1Ng==
         run: ./mvnw -B -ntp clean verify
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Check CSV, Excel and PDF exports
+        env:
+          DB_ENGINE: postgres
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          DB_NAME: cypher
+          DB_USER: cypher_user
+          DB_PASSWORD: cypher_ci_password
+          DB_SSL_MODE: Disabled
+        run: |
+          dotnet build reporting --configuration Release
+          dotnet reporting/bin/Release/net10.0/Cypher.Reporter.dll > /tmp/reporter.log 2>&1 &
+          reporter_pid=$!
+          trap 'kill "$reporter_pid" 2>/dev/null || true' EXIT
+          python3 scripts/check_reports.py || { cat /tmp/reporter.log; exit 1; }
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,6 +73,71 @@ jobs:
           name: backend-test-reports
           path: backend/target/surefire-reports/
           if-no-files-found: warn
+
+  mysql:
+    name: Backend tests (Java 21 + MySQL 8.4)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: cypher
+          MYSQL_ROOT_PASSWORD: cypher_ci_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -pcypher_ci_password"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Run MySQL workflow tests
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_NAME: cypher
+          DB_USER: root
+          DB_PASSWORD: cypher_ci_password
+          DB_SSL_MODE: DISABLED
+        run: ./mvnw -B -ntp clean verify
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Add one export test record
+        run: >-
+          docker exec ${{ job.services.mysql.id }} mysql -uroot -pcypher_ci_password cypher -e
+          "INSERT INTO incidents (project_id, camera_id, title, severity, status, occurred_at)
+          SELECT project_id, camera_id, 'Report test', 'HIGH', 'OPEN', CURRENT_TIMESTAMP
+          FROM cameras ORDER BY camera_id LIMIT 1;"
+      - name: Check CSV, Excel and PDF exports
+        env:
+          DB_ENGINE: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_NAME: cypher
+          DB_USER: root
+          DB_PASSWORD: cypher_ci_password
+          DB_SSL_MODE: Disabled
+        run: |
+          dotnet build reporting --configuration Release
+          dotnet reporting/bin/Release/net10.0/Cypher.Reporter.dll > /tmp/reporter.log 2>&1 &
+          reporter_pid=$!
+          trap 'kill "$reporter_pid" 2>/dev/null || true' EXIT
+          python3 scripts/check_reports.py || { cat /tmp/reporter.log; exit 1; }
+      - name: Upload MySQL test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-test-reports
+          path: backend/target/surefire-reports/
 
   reporting:
     name: Reporting worker (.NET 10)
@@ -80,6 +163,10 @@ jobs:
           node-version: "22"
       - name: Validate Python syntax
         run: python3 -m compileall -q ai
+      - name: Test detection confirmation and monitoring
+        run: |
+          python3 -m unittest discover -s ai/tests -v
+          node --test scripts/test_detection.mjs
       - name: Validate cockpit JavaScript
         run: node scripts/check_frontend_js.mjs
       - name: Validate JSON files
