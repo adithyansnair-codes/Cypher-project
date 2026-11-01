@@ -18,6 +18,8 @@
 - Return HTTP 401 for missing/invalid tokens so the browser opens sign-in again.
 - Replaced the duplicate frontend files with links to the served dashboard source.
 - Rewrote setup instructions and added a local service launcher.
+- Removed the mock camera feed, invented response-time chart and placeholder
+  incidents. Service status and pending alerts now use live results.
 
 ## Checks performed
 

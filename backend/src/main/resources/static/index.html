@@ -55,7 +55,7 @@
                 <button class="nav-item active" data-view="live">
                     <span class="nav-icon">◈</span>
                     <span>Live cockpit</span>
-                    <span class="nav-count">07</span>
+                    <span class="nav-count" id="navOpenCount">—</span>
                 </button>
 
                 <button class="nav-item" data-view="trace">
@@ -97,24 +97,7 @@
                     MONITORED ASSETS
                 </div>
 
-                <div class="camera-item">
-                    <span class="status-dot"></span>
-                    <span>Lab Entrance</span>
-                    <span class="camera-live">LIVE</span>
-                </div>
-
-                <div class="camera-item">
-                    <span class="status-dot"></span>
-                    <span>North Corridor</span>
-                    <span class="camera-live">LIVE</span>
-                </div>
-
-                <div class="camera-item">
-                    <span class="status-dot"></span>
-                    <span>Server Room</span>
-                    <span class="camera-live">LIVE</span>
-                </div>
-
+                <p class="camera-item">Sign in to load cameras.</p>
             </div>
 
         </nav>
@@ -268,7 +251,7 @@
                 </div>
 
                 <div class="stat-number" id="statOpen">
-                    07
+                    —
                 </div>
 
                 <div class="stat-description">
@@ -288,7 +271,7 @@
                 </div>
 
                 <div class="stat-number" id="statCritical">
-                    02
+                    —
                 </div>
 
                 <div class="stat-description">
@@ -308,7 +291,7 @@
                 </div>
 
                 <div class="stat-number" id="statHigh">
-                    03
+                    —
                 </div>
 
                 <div class="stat-description">
@@ -328,7 +311,7 @@
                 </div>
 
                 <div class="stat-number" id="statResolved">
-                    18
+                    —
                 </div>
 
                 <div class="stat-description">
@@ -391,151 +374,7 @@
 
 
                 <div class="incident-list" id="incidentList">
-
-
-                    <!-- Incident -->
-
-                    <button class="incident">
-
-                        <span class="incident-indicator critical"></span>
-
-                        <div class="incident-content">
-
-                            <div class="incident-meta">
-                                <span class="tag critical-tag">
-                                    CRITICAL / THREAT
-                                </span>
-                            </div>
-
-                            <strong>
-                                Weapon detected
-                            </strong>
-
-                            <small>
-                                North Corridor · 14:52
-                            </small>
-
-                        </div>
-
-                        <span class="incident-status critical-text">
-                            OPEN
-                        </span>
-
-                        <span class="arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-
-                    <!-- Incident -->
-
-                    <button class="incident">
-
-                        <span class="incident-indicator high"></span>
-
-                        <div class="incident-content">
-
-                            <div class="incident-meta">
-                                <span class="tag high-tag">
-                                    HIGH / HEALTH
-                                </span>
-                            </div>
-
-                            <strong>
-                                Stationary person
-                            </strong>
-
-                            <small>
-                                Lab Entrance · 14:48
-                            </small>
-
-                        </div>
-
-                        <span class="incident-status">
-                            ACKNOWLEDGED
-                        </span>
-
-                        <span class="arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-
-                    <!-- Incident -->
-
-                    <button class="incident">
-
-                        <span class="incident-indicator medium"></span>
-
-                        <div class="incident-content">
-
-                            <div class="incident-meta">
-                                <span class="tag medium-tag">
-                                    MEDIUM / MOTION
-                                </span>
-                            </div>
-
-                            <strong>
-                                Unusual movement
-                            </strong>
-
-                            <small>
-                                Server Room · 14:31
-                            </small>
-
-                        </div>
-
-                        <span class="incident-status">
-                            OPEN
-                        </span>
-
-                        <span class="arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-
-                    <!-- Incident -->
-
-                    <button class="incident">
-
-                        <span class="incident-indicator resolved"></span>
-
-                        <div class="incident-content">
-
-                            <div class="incident-meta">
-                                <span class="tag resolved-tag">
-                                    RESOLVED / ACCESS
-                                </span>
-                            </div>
-
-                            <strong>
-                                Restricted entry
-                            </strong>
-
-                            <small>
-                                North Corridor · 13:58
-                            </small>
-
-                        </div>
-
-                        <span class="incident-status resolved-text">
-                            RESOLVED
-                        </span>
-
-                        <span class="arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
+                    <p class="incident-empty">Sign in to load incidents.</p>
                 </div>
 
             </article>
@@ -550,91 +389,16 @@
                 <!-- CAMERA -->
 
                 <article class="panel camera-panel">
-
                     <div class="panel-header camera-header">
-
                         <div>
-
-                            <div class="eyebrow">
-                                SELECTED FEED
-                            </div>
-
-                            <h3>
-                                North Corridor
-                            </h3>
-
+                            <div class="eyebrow">CAMERA INPUT</div>
+                            <h3>Start a detection session</h3>
                         </div>
-
-                        <div class="mini-live">
-                            <span class="status-dot"></span>
-                            LIVE
-                        </div>
-
                     </div>
-
-
-                    <div class="camera-feed">
-
-                        <div class="camera-grid"></div>
-
-                        <div class="camera-glow"></div>
-
-                        <div class="camera-scan"></div>
-
-
-                        <div class="camera-top">
-
-                            <span>
-                                CAM-01
-                            </span>
-
-                            <span>
-                                WEAPON / 94%
-                            </span>
-
-                        </div>
-
-
-                        <div class="detection-box">
-
-                            <span>
-                                WEAPON / 94%
-                            </span>
-
-                        </div>
-
-
-                        <div class="camera-bottom">
-
-                            <span>
-                                ● REC
-                            </span>
-
-                            <span>
-                                1920 × 1080
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="feed-info">
-
-                        <span>
-                            <i></i>
-                            Building A / Level 1
-                        </span>
-
-                        <span>
-                            15 FPS
-                        </span>
-
-                    </div>
-
+                    <p>No camera feed is playing here. Open Live detection to use the webcam
+                       or analyze an uploaded image.</p>
+                    <button class="button secondary" id="openDetectionFromFeed" type="button">Open Live detection</button>
                 </article>
-
-
 
                 <!-- REPORT -->
 
@@ -703,10 +467,7 @@
 
                     </div>
 
-                    <div class="healthy">
-                        <span class="status-dot"></span>
-                        HEALTHY
-                    </div>
+                    <div class="healthy" id="platformHealth">NOT CHECKED</div>
 
                 </div>
 
@@ -715,23 +476,23 @@
 
                     <div class="health-item">
                         <span>Gateway</span>
-                        <strong>Healthy</strong>
+                        <strong id="healthGateway">Not checked</strong>
                     </div>
 
                     <div class="health-item">
                         <span>AI engine</span>
-                        <strong>Healthy</strong>
+                        <strong id="healthAi">Not checked</strong>
                     </div>
 
                     <div class="health-item">
                         <span>Database</span>
-                        <strong>Healthy</strong>
+                        <strong id="healthDatabase">Not checked</strong>
                     </div>
 
                     <div class="health-item">
                         <span>Alerts</span>
-                        <strong class="warning">
-                            2 pending
+                        <strong class="warning" id="pendingAlertCount">
+                            —
                         </strong>
                     </div>
 
@@ -744,46 +505,10 @@
             <!-- RESPONSE -->
 
             <article class="panel response-panel">
-
-                <div class="panel-header">
-
-                    <div>
-
-                        <div class="eyebrow">
-                            RESPONSE
-                        </div>
-
-                        <h3>
-                            Average response
-                        </h3>
-
-                    </div>
-
-                    <strong class="response-number">
-                        02:14
-                    </strong>
-
-                </div>
-
-
-                <div class="chart">
-
-                    <span style="height:35%"></span>
-                    <span style="height:50%"></span>
-                    <span style="height:42%"></span>
-                    <span style="height:65%"></span>
-                    <span style="height:54%"></span>
-                    <span style="height:79%"></span>
-                    <span style="height:62%"></span>
-                    <span style="height:90%"></span>
-                    <span style="height:72%"></span>
-
-                </div>
-
-                <div class="chart-label">
-                    LAST 7 DAYS · OPERATIONAL TREND
-                </div>
-
+                <div class="eyebrow">OPERATOR REVIEW</div>
+                <h3>Review the scene before responding</h3>
+                <p>Object detections flag scenes for review. They do not establish intent.
+                   A lying pose is not proof of a fall, and a person alone does not raise an alert.</p>
             </article>
 
         </section>
@@ -1562,6 +1287,8 @@ async function loadStats() {
     setText("statCritical", s.criticalPriority);
     setText("statHigh", s.highPriority);
     setText("statResolved", s.resolvedToday);
+    setText("navOpenCount", s.openIncidents);
+    document.getElementById("pendingAlertCount").textContent = s.pendingAlerts + " pending";
     return s;
 }
 
@@ -1705,7 +1432,7 @@ async function loadCameras() {
             <div class="camera-item">
                 <span class="status-dot${live ? "" : " offline"}"></span>
                 <span>${escapeHtml(c.location || c.cameraName)}</span>
-                <span class="camera-live">${escapeHtml(live ? "LIVE" : c.cameraStatus)}</span>
+                <span class="camera-live">${escapeHtml(live ? "ONLINE" : c.cameraStatus)}</span>
             </div>`;
     }).join("");
 
@@ -1716,9 +1443,28 @@ async function loadCameras() {
 
 /* --------------------------------------------------- refresh + control -- */
 
+async function loadPlatformHealth() {
+    const checks = await Promise.allSettled([
+        fetch(API + "/actuator/health", {
+            headers: { Authorization: "Bearer " + (getToken() || "") },
+            signal: AbortSignal.timeout(5000), cache: "no-store"
+        }).then(response => response.json()),
+        fetch(ML_ENGINE + "/health", { signal: AbortSignal.timeout(5000), cache: "no-store" })
+            .then(response => response.json())
+    ]);
+    const gateway = checks[0].status === "fulfilled" ? checks[0].value : null;
+    const ai = checks[1].status === "fulfilled" ? checks[1].value : null;
+    const databaseUp = gateway && (gateway.components?.db?.status || gateway.status) === "UP";
+    document.getElementById("healthGateway").textContent = gateway ? "Reachable" : "Unavailable";
+    document.getElementById("healthDatabase").textContent = databaseUp ? "Healthy" : "Unavailable";
+    document.getElementById("healthAi").textContent = ai?.status === "UP" ? "Healthy" : "Unavailable";
+    document.getElementById("platformHealth").textContent =
+        databaseUp && ai?.status === "UP" ? "HEALTHY" : "CHECK SERVICES";
+}
+
 async function refreshAll() {
     try {
-        await Promise.all([loadStats(), loadIncidents(), loadCameras()]);
+        await Promise.all([loadStats(), loadIncidents(), loadCameras(), loadPlatformHealth()]);
         renderSyncedAt();
     } catch (err) {
         if (err.message !== "unauthorized") notify("Refresh failed: " + err.message);
@@ -2850,6 +2596,11 @@ if (mlDemoCamera) mlDemoCamera.addEventListener("change", () => {
     mlDemoLog.textContent = "Camera changed. Start monitoring to use the selected camera.";
 });
 
+document.getElementById("openDetectionFromFeed").addEventListener("click", () => {
+    showView("ml-demo");
+    openMlDemo();
+});
+
 const mlDemoCloseButton = document.getElementById("mlDemoClose");
 if (mlDemoCloseButton) mlDemoCloseButton.addEventListener("click", () => showView("live"));
 
@@ -3154,7 +2905,7 @@ function renderSyncedAt() {
     document.querySelectorAll("footer, .footer").forEach(f => {
         const m = f.textContent.match(/GATEWAY SYNCED[^\n]*/i);
         if (m) {
-            const t = new Date().toLocaleTimeString("en-GB", { hour12: false });
+            const t = new Date().toLocaleTimeString("en-GB", { hour12: false, timeZone: "UTC" });
             f.textContent = f.textContent.replace(/GATEWAY SYNCED[^\n]*/i,
                 "GATEWAY SYNCED " + t + " UTC");
         }
@@ -3163,7 +2914,6 @@ function renderSyncedAt() {
 
 (async function boot() {
     renderToday();
-    renderSyncedAt();
     if (!getToken()) {
         showAuthOverlay("");
         return;
