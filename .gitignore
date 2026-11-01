@@ -44,3 +44,5 @@ __pycache__/
 data/
 .env.*
 !.env.example
+
+reporting/publish/

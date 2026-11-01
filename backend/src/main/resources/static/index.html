@@ -681,6 +681,21 @@
                     Select an image to start the model.
                 </div>
 
+                <section class="ml-analysis" id="mlPostAnalysis" hidden aria-live="polite">
+                    <div class="eyebrow">POST-ANALYSIS</div>
+                    <h4 id="mlAnalysisPriority"></h4>
+                    <p id="mlAnalysisSummary"></p>
+                    <p class="ml-analysis-meta" id="mlAnalysisMeta"></p>
+                    <div class="ml-analysis-table"><table>
+                        <thead><tr><th>Object</th><th>Count</th><th>Best confidence</th><th>Priority</th></tr></thead>
+                        <tbody id="mlAnalysisObjects"></tbody>
+                    </table></div>
+                    <div id="mlAnalysisActions"></div>
+                    <p class="ml-analysis-meta" id="mlAnalysisLimits"></p>
+                    <p id="mlAnalysisOutcome">No incident submitted.</p>
+                    <button type="button" class="button secondary" id="mlSaveAnalysis">Download analysis report</button>
+                </section>
+
                 <div class="ml-result" id="mlDemoResult" hidden>
                     <div class="eyebrow">LIVE RESULT</div>
                     <div class="ml-result-title">
@@ -1081,6 +1096,7 @@
 </div>
 
 <script src="detection-policy.js"></script>
+<script src="post-analysis.js"></script>
 <script>
 
 
@@ -2027,6 +2043,8 @@ const mlPolicy = new CypherDetectionPolicy();
 let mlGeneration = 0;
 let mlAbort = null;
 let mlAnalyzedDetections = [];
+let mlPostAnalysis = null;
+let mlInferenceMetadata = {};
 let mlMonitorTrace = [];
 
 function openMlDemo() {
@@ -2284,6 +2302,54 @@ async function drawDetectionResult(blob, detections) {
         : "Captured frame · no detection";
 }
 
+function renderPostAnalysis(detections, source, metadata = {}) {
+    mlPostAnalysis = CypherPostAnalysis.summarize(displayDetections(detections), {
+        source, camera: mlDemoCamera?.selectedOptions[0]?.textContent || "Unselected",
+        model: metadata.weights || "best.pt", threshold: metadata.threshold,
+        inferenceMs: metadata.inference_ms,
+        confirmation: mlWebcamStream ? "Video confirmation: 8 consecutive frames before submission"
+            : "Single image: operator confirmation required"
+    });
+    const a = mlPostAnalysis;
+    document.getElementById("mlAnalysisPriority").textContent = a.severity === "NONE" ? "No automatic alert" : a.severity + " · review required";
+    document.getElementById("mlAnalysisSummary").textContent = a.summary;
+    document.getElementById("mlAnalysisMeta").textContent = a.source + " · " + a.camera + " · " + a.model
+        + (a.inferenceMs == null ? "" : " · " + Number(a.inferenceMs).toFixed(0) + " ms inference")
+        + (a.threshold == null ? "" : " · threshold " + (a.threshold * 100).toFixed(0) + "%")
+        + " · " + a.confirmation;
+    document.getElementById("mlAnalysisObjects").innerHTML = a.objects.map(item =>
+        "<tr><td>" + escapeHtml(item.label) + "</td><td>" + item.count + "</td><td>"
+        + item.confidence.toFixed(1) + "%</td><td>" + item.severity + "</td></tr>"
+    ).join("");
+    document.getElementById("mlAnalysisActions").innerHTML = a.objects.filter(item => item.severity !== "NONE")
+        .map(item => "<p><strong>" + escapeHtml(item.label) + ":</strong> " + escapeHtml(item.reason)
+            + " " + escapeHtml(item.action) + "</p>").join("");
+    document.getElementById("mlAnalysisLimits").textContent = a.limitations;
+    document.getElementById("mlAnalysisOutcome").textContent = "No incident submitted for this analysis.";
+    document.getElementById("mlPostAnalysis").hidden = false;
+}
+
+function clearPostAnalysis() {
+    mlPostAnalysis = null;
+    document.getElementById("mlPostAnalysis").hidden = true;
+}
+
+document.getElementById("mlSaveAnalysis").addEventListener("click", () => {
+    if (!mlPostAnalysis) return;
+    const a = mlPostAnalysis;
+    const preview = mlCaptureCanvas.toDataURL("image/jpeg", 0.85);
+    const panel = document.getElementById("mlPostAnalysis").cloneNode(true);
+    panel.querySelector("button").remove();
+    const report = '<!doctype html><html><head><meta charset="utf-8"><title>CYPHER analysis</title>'
+        + '<style>body{max-width:900px;margin:40px auto;font:15px/1.5 Arial;color:#182233;padding:0 20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd2da;padding:9px;text-align:left}img{max-width:100%;max-height:500px}h1{margin-bottom:0}p{margin:12px 0}.eyebrow{margin-top:20px;font-weight:bold}.ml-analysis-meta{color:#526074}</style></head><body>'
+        + '<h1>CYPHER detection analysis</h1><p>' + escapeHtml(a.at) + '</p><img alt="Analyzed frame" src="' + preview + '">'
+        + panel.outerHTML + '<p>Open this report in a browser and choose Print → Save as PDF for submission.</p></body></html>';
+    const url = URL.createObjectURL(new Blob([report], { type: "text/html;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url;
+    link.download = "cypher-analysis-" + a.at.replace(/[:.]/g, "-") + ".html";
+    link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
 async function submitDetectionIncident(label, detection, traceSteps, cameraId, signal) {
     const confidence = Number(detection.confidence);
     return api("/api/incidents/ingest", {
@@ -2329,6 +2395,7 @@ async function monitorMlFrame(generation = mlGeneration) {
         const ready = mlPolicy.observe(cameraId, reportable);
         await drawDetectionResult(blob, detections);
         if (!active()) return;
+        renderPostAnalysis(detections, "Live webcam frame", result);
         const streak = Math.max(0, ...Object.values(mlPolicy.state(cameraId).streak));
         mlMonitorTrace.push("Live frame " + mlMonitorFrame + " · "
             + describeDetections(detections) + " · incident streak " + Math.min(8, streak) + "/8");
@@ -2356,6 +2423,11 @@ async function monitorMlFrame(generation = mlGeneration) {
 }
 
 function showMlIncident(incident, detection) {
+    if (mlPostAnalysis) {
+        mlPostAnalysis.incidents.push({ id: incident.incidentId, severity: incident.severity, status: incident.status });
+        document.getElementById("mlAnalysisOutcome").textContent = mlPostAnalysis.incidents.map(i =>
+            "Incident #" + i.id + " · " + i.severity + " · " + i.status).join("; ");
+    }
     document.getElementById("mlResultTitle").textContent = incident.title + " · incident #" + incident.incidentId;
     document.getElementById("mlResultSeverity").textContent = incident.severity;
     document.getElementById("mlResultDetail").textContent =
@@ -2396,6 +2468,7 @@ if (mlDemoFile) {
         const file = mlDemoFile.files && mlDemoFile.files[0];
         if (!file || !mlDemoPreview) return;
         stopMlWebcam();
+        clearPostAnalysis();
         mlSelectedFile = file;
         mlAnalyzedBlob = null;
         if (mlPreviewUrl) URL.revokeObjectURL(mlPreviewUrl);
@@ -2422,6 +2495,7 @@ if (mlDemoReset) {
         const cameraId = mlDemoCamera ? mlDemoCamera.value : "1";
         stopMlWebcam();
         mlPolicy.reset(cameraId);
+        clearPostAnalysis();
         try {
             await fetch(ML_ENGINE + "/demo/reset?camera_id=" + encodeURIComponent(cameraId),
                         { method: "POST" });
@@ -2455,6 +2529,7 @@ if (mlDemoRun) {
         mlAbort = new AbortController();
         const signal = mlAbort.signal;
         mlAnalyzedDetections = [];
+        clearPostAnalysis();
         mlDemoRun.disabled = true;
         mlDemoRun.textContent = "Analyzing…";
         mlDemoResult.hidden = true;
@@ -2472,6 +2547,7 @@ if (mlDemoRun) {
                 const result = await response.json();
                 if (generation !== mlGeneration) return;
                 detections = result.detections || [];
+                mlInferenceMetadata = result;
                 mlDemoLog.textContent = describeDetections(detections);
             } else if (mlWebcamStream) {
                 mlAnalyzedName = "webcam-frame.jpg";
@@ -2490,6 +2566,7 @@ if (mlDemoRun) {
                     const result = await response.json();
                 if (generation !== mlGeneration) return;
                     const frameDetections = result.detections || [];
+                    mlInferenceMetadata = result;
                     bestDetectionsByClass(frameDetections).forEach(detection => {
                         const label = String(detection.label || "").toLowerCase();
                         counts[label] = (counts[label] || 0) + 1;
@@ -2520,6 +2597,8 @@ if (mlDemoRun) {
             mlAnalyzedDetections = bestDetectionsByClass(detections).filter(d => ML_LIVE_CLASSES.has(d.label));
             await drawDetectionResult(mlAnalyzedBlob, detections);
             if (generation !== mlGeneration) return;
+            renderPostAnalysis(detections, mlAnalyzedName, mlInferenceMetadata);
+            if (!mlWebcamStream) mlProgressText.textContent = "Single image · operator review";
             if (mlAnalyzedDetections.length) {
                 mlRaiseIncident.hidden = false;
                 mlDemoLog.textContent += "\nReview the result, then confirm it if you want an incident.";
@@ -2593,7 +2672,10 @@ if (mlRaiseIncident) {
 
 if (mlDemoCamera) mlDemoCamera.addEventListener("change", () => {
     stopMlMonitoring();
-    mlDemoLog.textContent = "Camera changed. Start monitoring to use the selected camera.";
+    clearPostAnalysis();
+    mlAnalyzedDetections = [];
+    mlRaiseIncident.hidden = true;
+    mlDemoLog.textContent = "Camera changed. Analyze again or start monitoring for the selected camera.";
 });
 
 document.getElementById("openDetectionFromFeed").addEventListener("click", () => {

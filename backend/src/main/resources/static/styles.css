@@ -3520,3 +3520,12 @@ footer b {
     font-size: 12px;
     line-height: 1.6;
 }
+
+.ml-analysis { margin-top: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.ml-analysis[hidden] { display: none; }
+.ml-analysis h4 { margin: 8px 0; font-size: 17px; }
+.ml-analysis p { font-size: 12px; line-height: 1.6; }
+.ml-analysis-meta { color: var(--text-secondary); }
+.ml-analysis-table { overflow-x: auto; margin: 12px 0; }
+.ml-analysis table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ml-analysis th, .ml-analysis td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }

@@ -146,11 +146,14 @@ async def detect(
     """Detect objects in an uploaded image. No incidents are created."""
     frame = await _read_upload(file)
     threshold = None if conf is None else min(max(conf, 0.05), 0.95)
+    started = time.perf_counter()
     found = detector.detect(frame, conf=threshold, webcam=webcam)
     return JSONResponse(
         {
             "detections": found,
             "count": len(found),
+            "threshold": settings.CONFIDENCE if threshold is None else threshold,
+            "inference_ms": round((time.perf_counter() - started) * 1000, 1),
             "weights": Path(detector.weights).name,
         }
     )

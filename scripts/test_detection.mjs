@@ -40,7 +40,7 @@ function context(fetch) {
         captureWebcamBlob: async () => new Blob(["frame"]), fetch,
         drawDetectionResult: async () => {}, describeDetections: () => "knife",
         submitDetectionIncident: async label => { calls.submitted.push(label); return { incidentId: 1 }; },
-        showMlIncident() {}, notify() {}, refreshAll: async () => {},
+        showMlIncident() {}, renderPostAnalysis() {}, notify() {}, refreshAll: async () => {},
         stopMlMonitoring() { calls.stopped++; },
         setTimeout(fn) { calls.timers.push(fn); return 1; }
     });
@@ -69,4 +69,19 @@ test("stopping during inference prevents late incident submission", async () => 
     await pending;
     assert.equal(calls.submitted.length, 0);
     assert.equal(calls.timers.length, 0);
+});
+
+const { summarize } = require("../backend/src/main/resources/static/post-analysis.js");
+test("post-analysis prioritises weapons and reports people as context", () => {
+    const analysis = summarize([{label:"person",confidence:99}, {label:"person",confidence:80},
+        {label:"knife",confidence:36}]);
+    assert.equal(analysis.severity, "CRITICAL");
+    assert.equal(analysis.objects.find(item => item.label === "person").count, 2);
+    assert.equal(summarize([{label:"person",confidence:99}]).severity, "NONE");
+});
+test("post-analysis does not claim a lying pose proves a fall or an empty scene is safe", () => {
+    const analysis = summarize([{label:"lying",confidence:90}]);
+    assert.equal(analysis.severity, "HIGH");
+    assert.match(analysis.objects[0].reason, /not proof of a fall/);
+    assert.match(summarize([]).summary, /does not establish.*safe/);
 });
