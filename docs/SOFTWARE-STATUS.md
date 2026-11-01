@@ -15,12 +15,13 @@
 - Stopped treating an ordinary person detection as an automatic incident.
 - Made the trained model path configurable and removed the silent COCO fallback.
 - Removed the public JWT signing-key fallback. Local configuration supplies the key.
+- Return HTTP 401 for missing/invalid tokens so the browser opens sign-in again.
 - Replaced the duplicate frontend files with links to the served dashboard source.
 - Rewrote setup instructions and added a local service launcher.
 
 ## Checks performed
 
-- 10 backend tests passed on PostgreSQL 16 and on a separate native MySQL test server.
+- 12 backend tests passed on PostgreSQL 16 and on a separate native MySQL test server.
 - Six Python policy tests and four JavaScript policy/monitoring tests passed.
 - The local MySQL binary is 26.7; GitHub Actions also runs against MySQL 8.4,
   matching the RDS engine series. Check the workflow result for the exact commit.

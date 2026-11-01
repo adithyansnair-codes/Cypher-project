@@ -52,6 +52,17 @@ class SecurityAccessTests extends DatabaseTest {
     private JwtService jwt;
 
     @Test
+    void missingTokenReturnsUnauthorized() throws Exception {
+        mvc.perform(get("/api/incidents")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void invalidTokenReturnsUnauthorized() throws Exception {
+        mvc.perform(get("/api/incidents").header("Authorization", "Bearer invalid-token"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void securityManagerCanReadAuditTrail() throws Exception {
         mvc.perform(get("/api/audit").header("Authorization", bearer("SECURITY_MANAGER")))
                 .andExpect(status().isOk());

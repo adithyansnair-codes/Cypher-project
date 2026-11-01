@@ -59,7 +59,7 @@ jobs:
           DB_NAME: cypher
           DB_USER: cypher_user
           DB_PASSWORD: cypher_ci_password
-          DB_SSL_MODE: Disabled
+          DB_SSL_MODE: Required
         run: |
           dotnet build reporting --configuration Release
           dotnet reporting/bin/Release/net10.0/Cypher.Reporter.dll > /tmp/reporter.log 2>&1 &
@@ -106,7 +106,7 @@ jobs:
           DB_NAME: cypher
           DB_USER: root
           DB_PASSWORD: cypher_ci_password
-          DB_SSL_MODE: DISABLED
+          DB_SSL_MODE: REQUIRED
         run: ./mvnw -B -ntp clean verify
       - uses: actions/setup-dotnet@v4
         with:
@@ -125,7 +125,7 @@ jobs:
           DB_NAME: cypher
           DB_USER: root
           DB_PASSWORD: cypher_ci_password
-          DB_SSL_MODE: Disabled
+          DB_SSL_MODE: Required
         run: |
           dotnet build reporting --configuration Release
           dotnet reporting/bin/Release/net10.0/Cypher.Reporter.dll > /tmp/reporter.log 2>&1 &

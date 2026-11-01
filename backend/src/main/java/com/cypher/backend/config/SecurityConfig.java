@@ -31,6 +31,9 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                .exceptionHandling(errors -> errors.authenticationEntryPoint((request, response, error) ->
+                        response.sendError(401, "Authentication required")))
+
                 .authorizeHttpRequests(auth -> auth
                         // Public: registration and login.
                         .requestMatchers("/auth/**").permitAll()
