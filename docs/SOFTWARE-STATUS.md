@@ -25,8 +25,8 @@
 
 - 12 backend tests passed on PostgreSQL 16 and on a separate native MySQL test server.
 - Six Python policy tests and four JavaScript policy/monitoring tests passed.
-- The local MySQL binary is 26.7; GitHub Actions also runs against MySQL 8.4,
-  matching the RDS engine series. Check the workflow result for the exact commit.
+- GitHub Actions passed against PostgreSQL 16 and MySQL 8.4, including exports.
+  The local MySQL binary is 26.7; the CI check covers the RDS engine series.
 - CSV, Excel and PDF exports returned valid files from both databases. The MySQL
   check included an incident row and a status-filter check.
 - All seven Desktop demo images ran through the trained six-class model.

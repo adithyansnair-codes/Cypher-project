@@ -3497,3 +3497,26 @@ footer b {
 .status-dot.pending { background: var(--yellow); opacity: 1; }
 
 .resolved-text { color: var(--green); }
+
+/* Empty camera state and operator guidance. */
+.camera-panel > p {
+    margin: 18px 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.camera-panel > .button {
+    margin: 0 20px 20px;
+}
+.response-panel {
+    padding: 20px;
+}
+.response-panel > h3 {
+    margin: 10px 0;
+    font-size: 15px;
+}
+.response-panel > p {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+}
