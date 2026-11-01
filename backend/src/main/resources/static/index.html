@@ -2564,9 +2564,8 @@ if (mlDemoRun) {
                                                  { method: "POST", body: form, signal });
                     if (!response.ok) throw new Error("Inference failed with status " + response.status);
                     const result = await response.json();
-                if (generation !== mlGeneration) return;
+                    if (generation !== mlGeneration) return;
                     const frameDetections = result.detections || [];
-                    mlInferenceMetadata = result;
                     bestDetectionsByClass(frameDetections).forEach(detection => {
                         const label = String(detection.label || "").toLowerCase();
                         counts[label] = (counts[label] || 0) + 1;
@@ -2578,6 +2577,7 @@ if (mlDemoRun) {
                         bestScore = score;
                         bestBlob = blob;
                         bestFrameDetections = frameDetections;
+                        mlInferenceMetadata = result;
                     }
                     mlDemoLog.textContent = "Webcam sample " + sample + "/5 · "
                         + describeDetections(frameDetections);

@@ -85,3 +85,25 @@ test("post-analysis does not claim a lying pose proves a fall or an empty scene 
     assert.match(analysis.objects[0].reason, /not proof of a fall/);
     assert.match(summarize([]).summary, /does not establish.*safe/);
 });
+
+test("post-analysis renders the model result and records the submitted incident", () => {
+    const elements = new Map();
+    const document = { getElementById(id) {
+        if (!elements.has(id)) elements.set(id, { textContent: "", innerHTML: "", hidden: true });
+        return elements.get(id);
+    } };
+    const ctx = vm.createContext({ document, CypherPostAnalysis: { summarize },
+        displayDetections: value => value, escapeHtml: value => String(value),
+        mlDemoCamera: {selectedOptions: [{textContent: "CAM-002"}]}, mlWebcamStream: null,
+        mlPostAnalysis: null, mlDemoResult: {hidden: true} });
+    const render = html.slice(html.indexOf("function renderPostAnalysis("), html.indexOf("\nfunction clearPostAnalysis"));
+    const show = html.slice(html.indexOf("function showMlIncident("), html.indexOf("\nasync function startMlMonitoring"));
+    vm.runInContext(render + "\n" + show, ctx);
+    ctx.renderPostAnalysis([knife], "knife.jpg", {weights:"best.pt", threshold:0.35, inference_ms:120});
+    assert.equal(elements.get("mlAnalysisPriority").textContent, "CRITICAL · review required");
+    assert.match(elements.get("mlAnalysisObjects").innerHTML, /knife/);
+    assert.match(elements.get("mlAnalysisMeta").textContent, /35%/);
+    assert.equal(elements.get("mlPostAnalysis").hidden, false);
+    ctx.showMlIncident({incidentId:123, title:"Knife detected", severity:"CRITICAL", status:"OPEN"}, knife);
+    assert.match(elements.get("mlAnalysisOutcome").textContent, /#123.*CRITICAL.*OPEN/);
+});
