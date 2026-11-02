@@ -10,7 +10,7 @@ health or build check for it.
 |---|---|---|---|
 | Local host | PostgreSQL 16.15 | Spring Boot 4 / Java 21 | .NET 10 |
 | Docker Compose | PostgreSQL 16 | Spring Boot 4 / Java 21 | .NET 10 |
-| AWS DA2 deployment | RDS MySQL 8.4.9 | Spring Boot / Java 21 | MySQL support added; deployment still to verify |
+| AWS DA2 deployment | RDS MySQL 8.4.9 | Spring Boot / Java 21 | .NET 10 with MySQL, tested through the gateway |
 
 The repository's canonical local schema is PostgreSQL 16. The separate DA2
 staging build in AWS uses MySQL and must not be described as the same database

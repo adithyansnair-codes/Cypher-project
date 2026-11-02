@@ -1,11 +1,11 @@
-# Software status — 1 November 2026
+# Software status — 2 November 2026
 
 ## Completed in this update
 
 - Fixed incident creation on PostgreSQL and MySQL. Each request returns its own
   inserted incident ID, including when several detections arrive together.
 - Added MySQL migrations for the schema, model record, roles, audit trigger and
-  alert closure trigger. Existing AWS data needs a schema check before migration.
+  alert closure trigger. The AWS RDS database has been migrated.
 - Updated analytics, audit queries and the reporting worker for both databases.
   Database sessions use UTC for daily counts.
 - Kept webcam monitoring running after an alert. Added per-camera/class cooldowns,
@@ -17,6 +17,7 @@
 - Removed the public JWT signing-key fallback. Local configuration supplies the key.
 - Return HTTP 401 for missing/invalid tokens so the browser opens sign-in again.
 - Replaced the duplicate frontend files with links to the served dashboard source.
+- Added a post-analysis panel and a downloadable HTML report with the annotated frame.
 - Rewrote setup instructions and added a local service launcher.
 - Removed the mock camera feed, invented response-time chart and placeholder
   incidents. Service status and pending alerts now use live results.
@@ -24,7 +25,7 @@
 ## Checks performed
 
 - 12 backend tests passed on PostgreSQL 16 and on a separate native MySQL test server.
-- Six Python policy tests and four JavaScript policy/monitoring tests passed.
+- Six Python policy tests and seven JavaScript detection/analysis tests passed.
 - GitHub Actions passed against PostgreSQL 16 and MySQL 8.4, including exports.
   The local MySQL binary is 26.7; the CI check covers the RDS engine series.
 - CSV, Excel and PDF exports returned valid files from both databases. The MySQL
@@ -35,18 +36,30 @@
   This used repeated test input to check the counter; it is not a live-camera accuracy test.
 - The launcher started all three services on separate test ports.
 
-## Still to verify on AWS
+## AWS deployment
 
-- Deploy this build after checking the existing MySQL schema and taking a backup.
-- Confirm the migration account can create the audit and alert triggers on RDS.
-- Start the MySQL-configured reporting worker and test exports through the gateway.
-- Confirm a scoped S3 media policy and perform a real incident-evidence upload.
-  Existing S3 database backups do not prove that the incident upload path works.
-- Check HTTPS and public access settings before treating the deployment as ready
-  for use outside the project demo.
+The updated backend and reporting service are running on EC2 with RDS MySQL
+8.4.9. Before migration, a database backup was saved on the instance. The
+existing eight incidents were preserved. The migration created the model row,
+roles and the audit and alert triggers.
 
-SSH to the EC2 instance timed out during this update, so these deployment checks
-are not claimed as completed. The browser console remains a possible follow-up path.
+The cloud login, camera list, analytics, audit and CSV, Excel and PDF exports
+were tested through the gateway. A labelled synthetic test incident was created
+and resolved; its resolution is present in the audit history. It remains in
+RDS as `DEMO TEST - simulated knife signal`.
+
+RDS uses the `cypher-mysql84` parameter group with
+`log_bin_trust_function_creators` enabled, after approval for the trigger setup.
+The running cloud build includes the post-analysis panel. The later repository
+commits improve the webcam analysis metadata test and deployment configuration.
+
+Still to do:
+
+- Configure and verify a scoped S3 media policy and a real evidence upload.
+  Database backups do not prove that incident uploads work.
+- Add HTTPS and review public access settings before use beyond the project demo.
+- Test the physical webcam in the final presentation environment. The image demo
+  and confirmation logic were tested; live-camera accuracy still needs a real run.
 
 ## Model and project limits
 
