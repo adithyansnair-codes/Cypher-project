@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="theme-color" content="#f5f5f7">
+    <meta name="theme-color" content="#f4f3ef">
 
     <title>CYPHER / OPS</title>
 
@@ -2276,13 +2276,13 @@ async function drawDetectionResult(blob, detections) {
     unique.forEach(detection => {
         const box = detection.box || [];
         if (box.length !== 4) return;
-        const color = ["knife", "pistol", "fire"].includes(detection.label)
-            ? "#ff3b55"
-            : ["smoke", "lying", "fall"].includes(detection.label)
-                ? "#e1a72f"
-                : "#159daf";
+        const color = "#111111";
         const [x1, y1, x2, y2] = box.map(Number);
+        context.strokeStyle = "#ffffff";
+        context.lineWidth = lineWidth + 3;
+        context.strokeRect(x1, y1, x2 - x1, y2 - y1);
         context.strokeStyle = color;
+        context.lineWidth = lineWidth;
         context.strokeRect(x1, y1, x2 - x1, y2 - y1);
         const label = detection.label.toUpperCase() + "  "
             + Number(detection.confidence).toFixed(1) + "%";
