@@ -5,11 +5,9 @@ Boot gateway, which owns the database. This service holds no persistent state.
 
 ## Verified result
 
-The six-class detector drives the live incident pipeline:
-
-```
-image  ->  YOLO  ->  POST /api/incidents/ingest  ->  CRITICAL incident in the cockpit
-```
+The six-class detector supplies detections to the incident pipeline. Live frames
+are checked over time before the gateway creates an incident. For an uploaded
+image, the browser asks the operator to review and confirm the result.
 
 ![cockpit with an AI-raised incident](../docs/cockpit-ai.png)
 
@@ -22,7 +20,7 @@ image  ->  YOLO  ->  POST /api/incidents/ingest  ->  CRITICAL incident in the co
 | Classes | `knife`, `pistol`, `person`, `fire`, `smoke`, `lying` |
 | Input | 640 px |
 | Training | 40-epoch five-class stage + 20-epoch six-class fine-tune, Apple MPS |
-| Checkpoint | `.dsh-scratch/training/runs/cypher-v3-6class/weights/best.pt` |
+| Checkpoint | `best.pt` (stored outside Git; set its path using `YOLO_WEIGHTS`) |
 
 **Held-out comparison metrics** (385 images, 416 weapon boxes):
 
@@ -144,9 +142,11 @@ cooldown on that camera. Monitoring continues after an incident.
 
 The browser's image workflow analyzes one image and asks the operator to confirm
 it. Repeating inference on the same image would not be temporal evidence, so it
-is not described as eight-frame confirmation. A person by itself is shown in the
-preview but does not raise an incident. `lying` does not establish that a fall
-happened. Browser and Python monitoring each keep cooldowns in memory; use one
+is not described as eight-frame confirmation. In the browser workflow, a person
+by itself is shown in the preview but does not raise an incident. The terminal
+CLI handles single images separately and can submit their detections directly;
+use `--dry-run` when you only want to inspect an image. `lying` does not
+establish that a fall happened. Browser and Python monitoring each keep cooldowns in memory; use one
 monitoring path per camera to avoid duplicates across separate processes.
 
 Set `YOLO_WEIGHTS` explicitly or place the model under

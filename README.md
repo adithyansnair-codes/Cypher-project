@@ -16,12 +16,15 @@ acknowledge and resolve incidents.
   cooldown per camera and object class. Uploaded images use manual confirmation.
 - CSV, Excel and PDF exports through a separate C# reporting service.
 - PostgreSQL support locally and MySQL support for the AWS RDS setup.
-- Optional incident evidence uploads to private S3 storage.
+- Evidence uploads through S3-compatible storage; the live AWS S3 upload path
+  still needs to be configured and verified.
 
 A detection is a reason for an operator to review the scene. The model detects
 objects; it does not establish who is holding a weapon or whether someone intends
 harm. `lying` is a pose class, not proof of a fall. A person detection alone does
-not create an incident. See the [model results and limitations](ai/evidence/README.md).
+not create an incident in the browser monitoring workflow. The terminal CLI handles
+single images separately and can submit their detections directly. See the
+[model results and limitations](ai/evidence/README.md).
 
 ## Stack
 
@@ -51,7 +54,9 @@ There is no React app or npm development server to install.
    ```
 
 4. Set `YOLO_WEIGHTS` in `.env` to the trained `best.pt` file. Weights and datasets
-   are kept outside Git. Set `PERSON_WEIGHTS` if using the optional COCO person model.
+   are kept outside Git, so a fresh clone cannot run the trained detector without
+   obtaining this checkpoint separately. Set `PERSON_WEIGHTS` if using the optional
+   COCO person model.
 5. Start the services:
 
    ```bash
